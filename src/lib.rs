@@ -1,19 +1,22 @@
+extern crate web_sys;
 mod mine;
 
-use bevy::prelude::*;
+use bevy::{prelude::*, window::CursorMoved};
 use mine::Mine;
 use wasm_bindgen::prelude::*;
 
-fn hello_world() {
-    println!("hello world!");
+// A macro to provide `log!(..)`-style syntax for `console.log` logging.
+#[macro_use]
+macro_rules! log {
+    ( $( $t:tt )* ) => {
+        web_sys::console::log_1(&format!( $( $t )* ).into());
+    }
 }
+
 struct Board {
     height: u16,
     width: u16,
 }
-//struct Board {
-//grid: Vec<Vec<Mine>>,
-//}
 
 fn generate_board(mut commands: Commands) {
     commands.spawn().insert(Board {
@@ -71,41 +74,54 @@ fn setup(mut commands: Commands, mut materials: ResMut<Assets<ColorMaterial>>) {
 
     let mine_rows = 4;
     let mine_columns = 4;
-    let mine_spacing = 2.0;
-    let mine_size = Vec2::new(96.0, 96.0);
-    let mines_width = mine_columns as f32 * (mine_size.x + mine_spacing) - mine_spacing;
+    let spacing = 2.0;
+    let size = Vec2::new(96.0, 96.0);
+    let width = mine_columns as f32 * (size.x + spacing) - spacing;
     // center the mines and move them up a bit
-    let mines_offset = Vec3::new(
-        -(mines_width - mine_size.x) / 2.0,
-        -(mines_width - mine_size.y) / 2.0,
-        0.0,
-    );
-    let mine_material = materials.add(Color::INDIGO.into());
+    let offset = Vec3::new(-(width - size.x) / 2.0, -(width - size.y) / 2.0, 0.0);
     for row in 0..mine_rows {
-        let y_position = row as f32 * (mine_size.y + mine_spacing);
+        let y = row as f32 * (size.y + spacing);
         for column in 0..mine_columns {
-            let mine_position = Vec3::new(
-                column as f32 * (mine_size.x + mine_spacing),
-                y_position,
-                0.0,
-            ) + mines_offset;
+            let mine_material = materials.add(Color::INDIGO.into());
+            let mine_position = Vec3::new(column as f32 * (size.x + spacing), y, 0.0) + offset;
             // mine
-            commands.spawn_bundle(SpriteBundle {
-                material: mine_material.clone(),
-                sprite: Sprite::new(mine_size),
-                transform: Transform::from_translation(mine_position),
-                ..Default::default()
-            });
+            commands
+                .spawn_bundle(SpriteBundle {
+                    material: mine_material.clone(),
+                    sprite: Sprite::new(size),
+                    transform: Transform::from_translation(mine_position),
+                    ..Default::default()
+                })
+                .insert(Mine {
+                    mine: false,
+                    value: 0,
+                    x: column,
+                    y: row,
+                });
         }
     }
 }
+
+// This system prints messages when you press or release the left mouse button:
+fn mouse_click_system(
+    mouse_button_input: Res<Input<MouseButton>>,
+    mut cursor_moved_events: EventReader<CursorMoved>,
+    mut windows: ResMut<Windows>,
+    mut query: Query<(&Mine, &mut Transform)>,
+) {
+    if mouse_button_input.just_released(MouseButton::Left) {
+        let window = windows.get_primary_mut().unwrap();
+        log!("left mouse just released, {:?}", window.cursor_position());
+    }
+}
+
 #[wasm_bindgen]
 pub fn run() {
     let mut app = App::build();
     app.add_plugins(DefaultPlugins);
     app.add_plugin(BoardPlugin);
-    app.add_system(hello_world.system());
-    app.insert_resource(ClearColor(Color::rgb(0.9, 0.9, 0.9)));
+    app.add_system(mouse_click_system.system());
+    app.insert_resource(ClearColor(Color::rgb(1.0, 1.0, 1.0)));
 
     app.add_startup_system(setup.system());
 
