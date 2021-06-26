@@ -2,7 +2,7 @@ extern crate web_sys;
 mod mine;
 
 use bevy::{prelude::*, window::CursorMoved};
-use mine::Mine;
+use mine::{Cell, NewCell};
 use wasm_bindgen::prelude::*;
 
 // A macro to provide `log!(..)`-style syntax for `console.log` logging.
@@ -79,25 +79,28 @@ fn setup(mut commands: Commands, mut materials: ResMut<Assets<ColorMaterial>>) {
     let width = mine_columns as f32 * (size.x + spacing) - spacing;
     // center the mines and move them up a bit
     let offset = Vec3::new(-(width - size.x) / 2.0, -(width - size.y) / 2.0, 0.0);
+    let mine_material = materials.add(Color::INDIGO.into());
     for row in 0..mine_rows {
         let y = row as f32 * (size.y + spacing);
         for column in 0..mine_columns {
-            let mine_material = materials.add(Color::INDIGO.into());
-            let mine_position = Vec3::new(column as f32 * (size.x + spacing), y, 0.0) + offset;
+            let position = Vec3::new(column as f32 * (size.x + spacing), y, 0.0) + offset;
             // mine
             commands
                 .spawn_bundle(SpriteBundle {
                     material: mine_material.clone(),
                     sprite: Sprite::new(size),
-                    transform: Transform::from_translation(mine_position),
+                    transform: Transform::from_translation(position),
                     ..Default::default()
                 })
-                .insert(Mine {
+                .insert(Cell::new(NewCell {
+                    column,
                     mine: false,
+                    offset,
+                    position,
+                    row,
+                    size,
                     value: 0,
-                    x: column,
-                    y: row,
-                });
+                }));
         }
     }
 }
@@ -105,13 +108,19 @@ fn setup(mut commands: Commands, mut materials: ResMut<Assets<ColorMaterial>>) {
 // This system prints messages when you press or release the left mouse button:
 fn mouse_click_system(
     mouse_button_input: Res<Input<MouseButton>>,
-    mut cursor_moved_events: EventReader<CursorMoved>,
     mut windows: ResMut<Windows>,
-    mut query: Query<(&Mine, &mut Transform)>,
+    mut query: Query<(&Cell, &mut Transform)>,
 ) {
     if mouse_button_input.just_released(MouseButton::Left) {
         let window = windows.get_primary_mut().unwrap();
-        log!("left mouse just released, {:?}", window.cursor_position());
+        if let Some(cursor) = window.cursor_position() {
+            let cursor = cursor - Vec2::new(window.width() / 2.0, window.height() / 2.0);
+            for (cell, transform) in query.iter_mut() {
+                if cell.contains(cursor) {
+                    log!("hurray");
+                }
+            }
+        }
     }
 }
 
