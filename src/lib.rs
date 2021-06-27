@@ -1,8 +1,8 @@
 extern crate web_sys;
-mod mine;
+mod cell;
 
 use bevy::{prelude::*, window::CursorMoved};
-use mine::{Cell, NewCell};
+use cell::{Cell, NewCell};
 use wasm_bindgen::prelude::*;
 
 // A macro to provide `log!(..)`-style syntax for `console.log` logging.
