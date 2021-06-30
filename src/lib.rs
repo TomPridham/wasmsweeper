@@ -80,6 +80,7 @@ fn setup(mut commands: Commands, mut materials: ResMut<Assets<ColorMaterial>>) {
     // center the mines and move them up a bit
     let offset = Vec3::new(-(width - size.x) / 2.0, -(width - size.y) / 2.0, 0.0);
     let mine_material = materials.add(Color::INDIGO.into());
+    let mm = materials.add(Color::RED.into());
     for row in 0..mine_rows {
         let y = row as f32 * (size.y + spacing);
         for column in 0..mine_columns {
@@ -87,7 +88,11 @@ fn setup(mut commands: Commands, mut materials: ResMut<Assets<ColorMaterial>>) {
             // mine
             commands
                 .spawn_bundle(SpriteBundle {
-                    material: mine_material.clone(),
+                    material: if column % 2 == 0 {
+                        mine_material.clone()
+                    } else {
+                        mm.clone()
+                    },
                     sprite: Sprite::new(size),
                     transform: Transform::from_translation(position),
                     ..Default::default()
@@ -108,15 +113,18 @@ fn setup(mut commands: Commands, mut materials: ResMut<Assets<ColorMaterial>>) {
 // This system prints messages when you press or release the left mouse button:
 fn mouse_click_system(
     mouse_button_input: Res<Input<MouseButton>>,
+    mut materials: ResMut<Assets<ColorMaterial>>,
     mut windows: ResMut<Windows>,
-    mut query: Query<(&Cell, &mut Transform)>,
+    mut query: Query<(&Cell, &mut Transform, &mut Handle<ColorMaterial>)>,
 ) {
     if mouse_button_input.just_released(MouseButton::Left) {
         let window = windows.get_primary_mut().unwrap();
         if let Some(cursor) = window.cursor_position() {
-            let cursor = cursor - Vec2::new(window.width() / 2.0, window.height() / 2.0);
-            for (cell, transform) in query.iter_mut() {
+            log!("{:?}", cursor);
+            let cursor = cursor - Vec2::new(window.width(), window.height()) / 2.0;
+            for (cell, transform, mut mat_handle) in query.iter_mut() {
                 if cell.contains(cursor) {
+                    *mat_handle = materials.add(Color::BLUE.into());
                     log!("hurray");
                 }
             }

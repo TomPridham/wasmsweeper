@@ -37,10 +37,10 @@ impl Cell {
             x: column,
             mine,
             value,
-            x0: position.x + offset.x,
-            x1: position.x + offset.x + size.x,
-            y0: position.y + offset.y,
-            y1: position.y + offset.y + size.y,
+            x0: position.x - size.x / 2.0,
+            x1: position.x + size.x / 2.0,
+            y0: position.y - size.y / 2.0,
+            y1: position.y + size.y / 2.0,
         }
     }
     pub fn contains(&self, position: Vec2) -> bool {
