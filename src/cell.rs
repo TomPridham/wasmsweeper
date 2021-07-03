@@ -3,7 +3,6 @@ use bevy::prelude::*;
 pub struct NewCell {
     pub column: u16,
     pub mine: bool,
-    pub offset: Vec3,
     pub position: Vec3,
     pub row: u16,
     pub size: Vec2,
@@ -26,7 +25,6 @@ impl Cell {
         let NewCell {
             column,
             mine,
-            offset,
             position,
             row,
             size,
@@ -43,6 +41,7 @@ impl Cell {
             y1: position.y + size.y / 2.0,
         }
     }
+
     pub fn contains(&self, position: Vec2) -> bool {
         (self.x0..self.x1).contains(&position.x) && (self.y0..self.y1).contains(&position.y)
     }

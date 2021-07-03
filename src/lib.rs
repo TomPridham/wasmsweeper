@@ -100,7 +100,6 @@ fn setup(mut commands: Commands, mut materials: ResMut<Assets<ColorMaterial>>) {
                 .insert(Cell::new(NewCell {
                     column,
                     mine: false,
-                    offset,
                     position,
                     row,
                     size,
