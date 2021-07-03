@@ -1,7 +1,9 @@
 extern crate web_sys;
+mod board;
 mod cell;
 
-use bevy::{prelude::*, window::CursorMoved};
+use bevy::prelude::*;
+use board::{generate_board, Board, BoardPlugin};
 use cell::{Cell, NewCell};
 use wasm_bindgen::prelude::*;
 
@@ -10,26 +12,6 @@ use wasm_bindgen::prelude::*;
 macro_rules! log {
     ( $( $t:tt )* ) => {
         web_sys::console::log_1(&format!( $( $t )* ).into());
-    }
-}
-
-struct Board {
-    height: u16,
-    width: u16,
-}
-
-fn generate_board(mut commands: Commands) {
-    commands.spawn().insert(Board {
-        height: 16,
-        width: 16,
-    });
-}
-
-struct BoardPlugin;
-
-impl Plugin for BoardPlugin {
-    fn build(&self, app: &mut AppBuilder) {
-        app.add_startup_system(generate_board.system());
     }
 }
 
@@ -71,42 +53,6 @@ fn setup(mut commands: Commands, mut materials: ResMut<Assets<ColorMaterial>>) {
         sprite: Sprite::new(Vec2::new(bounds.x + wall_thickness, wall_thickness)),
         ..Default::default()
     });
-
-    let mine_rows = 4;
-    let mine_columns = 4;
-    let spacing = 2.0;
-    let size = Vec2::new(96.0, 96.0);
-    let width = mine_columns as f32 * (size.x + spacing) - spacing;
-    // center the mines and move them up a bit
-    let offset = Vec3::new(-(width - size.x) / 2.0, -(width - size.y) / 2.0, 0.0);
-    let mine_material = materials.add(Color::INDIGO.into());
-    let mm = materials.add(Color::RED.into());
-    for row in 0..mine_rows {
-        let y = row as f32 * (size.y + spacing);
-        for column in 0..mine_columns {
-            let position = Vec3::new(column as f32 * (size.x + spacing), y, 0.0) + offset;
-            // mine
-            commands
-                .spawn_bundle(SpriteBundle {
-                    material: if column % 2 == 0 {
-                        mine_material.clone()
-                    } else {
-                        mm.clone()
-                    },
-                    sprite: Sprite::new(size),
-                    transform: Transform::from_translation(position),
-                    ..Default::default()
-                })
-                .insert(Cell::new(NewCell {
-                    column,
-                    mine: false,
-                    position,
-                    row,
-                    size,
-                    value: 0,
-                }));
-        }
-    }
 }
 
 // This system prints messages when you press or release the left mouse button:

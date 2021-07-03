@@ -1,19 +1,25 @@
 use bevy::prelude::*;
 
+pub struct BasicCell {
+    pub column: usize,
+    pub row: usize,
+}
+
 pub struct NewCell {
-    pub column: u16,
+    pub column: usize,
     pub mine: bool,
     pub position: Vec3,
-    pub row: u16,
+    pub row: usize,
     pub size: Vec2,
     pub value: u8,
 }
 #[derive(Debug)]
 pub struct Cell {
     pub mine: bool,
+    pub position: Vec3,
     pub value: u8,
-    pub x: u16,
-    pub y: u16,
+    pub x: usize,
+    pub y: usize,
     x0: f32,
     x1: f32,
     y0: f32,
@@ -31,14 +37,15 @@ impl Cell {
             value,
         } = new_cell;
         Cell {
-            y: row,
-            x: column,
             mine,
+            position,
             value,
             x0: position.x - size.x / 2.0,
             x1: position.x + size.x / 2.0,
+            x: column,
             y0: position.y - size.y / 2.0,
             y1: position.y + size.y / 2.0,
+            y: row,
         }
     }
 
