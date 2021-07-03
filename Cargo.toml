@@ -12,7 +12,7 @@ crate-type = ["cdylib", "rlib"]
 # Dependencies for all targets go here.
 [dependencies]
 getrandom = { version = "0.2", features = ["wasm-bindgen"] }
-rand = "0.8"
+rand = { version="0.8.4", default-features = false , features=["small_rng"]}
 wasm-bindgen = "0.2"
 web-sys = {version = "0.3.46", features =["console"]}
 
