@@ -62,6 +62,7 @@ fn mouse_click_system(
     mut windows: ResMut<Windows>,
     mut board_query: Query<&mut Board>,
     mut cell_query: Query<(&BasicCell, &mut Transform, &mut Handle<ColorMaterial>)>,
+    asset_server: Res<AssetServer>,
 ) {
     if mouse_button_input.just_released(MouseButton::Left) {
         let window = windows.get_primary_mut().unwrap();
@@ -69,15 +70,17 @@ fn mouse_click_system(
             log!("{:?}", cursor);
             let cursor = cursor - Vec2::new(window.width(), window.height()) / 2.0;
             for (basic_cell, transform, mut mat_handle) in cell_query.iter_mut() {
-                if let Some(mut board) = board_query.iter_mut().next() {
-                    if !board.initialized {
-                        let row = basic_cell.row;
-                        let column = basic_cell.column;
-                        board.fill_board(4, (row, column));
-                    }
-                }
                 if basic_cell.contains(cursor) {
-                    *mat_handle = materials.add(Color::BLUE.into());
+                    if let Some(mut board) = board_query.iter_mut().next() {
+                        if !board.initialized {
+                            let row = basic_cell.row;
+                            let column = basic_cell.column;
+                            board.fill_board(4, (row, column));
+                        }
+                    }
+                    let sprite_handle = asset_server.load("one.png");
+
+                    *mat_handle = materials.add(sprite_handle.into());
                     log!("hurray");
                 }
             }

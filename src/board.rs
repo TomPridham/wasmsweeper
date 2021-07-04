@@ -53,7 +53,11 @@ impl Board {
                 let value = SURROUND.iter().fold(0, |acc, (surround_x, surround_y)| {
                     let surround_x = x as isize + surround_x;
                     let surround_y = y as isize + surround_y;
-                    if surround_x < 0 || surround_y < 0 {
+                    if surround_x < 0
+                        || surround_y < 0
+                        || surround_x >= rows as isize
+                        || surround_y >= columns as isize
+                    {
                         return acc;
                     }
                     if self.cells[usize::try_from(surround_x).unwrap_or(0)]
