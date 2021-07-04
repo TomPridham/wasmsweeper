@@ -1,21 +1,8 @@
-use super::cell::{BasicCell, Cell, NewCell, CELL_COLOR};
+use crate::cell::{BasicCell, Cell, NewCell, CELL_COLOR, SURROUND};
 use bevy::prelude::*;
 use rand::{rngs::SmallRng, Rng, SeedableRng};
 use std::convert::TryFrom;
 use std::error::Error;
-
-// Create small, cheap to initialize and fast RNG with a random seed.
-// The randomness is supplied by the operating system.
-const SURROUND: [(isize, isize); 8] = [
-    (-1, -1),
-    (0, -1),
-    (1, -1),
-    (-1, 0),
-    (1, 0),
-    (-1, 1),
-    (0, 1),
-    (1, 1),
-];
 
 pub struct Board {
     pub cells: Vec<Vec<Cell>>,
@@ -39,10 +26,11 @@ impl Board {
         while curr_mines < mines {
             let row = rng.gen_range(0..rows);
             let col = rng.gen_range(0..columns);
-            if row == start.0 && col == start.1 {
+            let cell = &mut self.cells[row][col];
+            if row == start.0 && col == start.1 || cell.surrounds((row, col)) {
                 continue;
             }
-            let cell = &mut self.cells[row][col];
+
             if !cell.mine {
                 cell.mine = true;
                 curr_mines += 1;

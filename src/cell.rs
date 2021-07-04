@@ -1,6 +1,18 @@
 use bevy::prelude::*;
 
 pub const CELL_COLOR: bevy::prelude::Color = Color::MIDNIGHT_BLUE;
+
+pub const SURROUND: [(isize, isize); 8] = [
+    (-1, -1),
+    (0, -1),
+    (1, -1),
+    (-1, 0),
+    (1, 0),
+    (-1, 1),
+    (0, 1),
+    (1, 1),
+];
+
 #[derive(Debug)]
 pub struct Cell {
     pub column: usize,
@@ -48,5 +60,14 @@ impl BasicCell {
 
     pub fn contains(&self, position: Vec2) -> bool {
         (self.x0..self.x1).contains(&position.x) && (self.y0..self.y1).contains(&position.y)
+    }
+}
+
+impl Cell {
+    pub fn surrounds(&self, cell_position: (usize, usize)) -> bool {
+        SURROUND.iter().any(|(row, col)| {
+            self.row as isize + row == cell_position.0 as isize
+                && self.column as isize + col == cell_position.1 as isize
+        })
     }
 }
