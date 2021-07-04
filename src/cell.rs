@@ -61,6 +61,32 @@ impl BasicCell {
     pub fn contains(&self, position: Vec2) -> bool {
         (self.x0..self.x1).contains(&position.x) && (self.y0..self.y1).contains(&position.y)
     }
+
+    pub fn apply_material(
+        &self,
+        asset_server: Res<AssetServer>,
+        mut materials: ResMut<Assets<ColorMaterial>>,
+        mat_handle: &mut Handle<ColorMaterial>,
+        mine: bool,
+        value: u8,
+    ) {
+        let material = if mine {
+            asset_server.load("mine.png").into()
+        } else {
+            match value {
+                1 => asset_server.load("one.png").into(),
+                2 => asset_server.load("two.png").into(),
+                3 => asset_server.load("three.png").into(),
+                4 => asset_server.load("four.png").into(),
+                5 => asset_server.load("five.png").into(),
+                6 => asset_server.load("six.png").into(),
+                7 => asset_server.load("seven.png").into(),
+                8 => asset_server.load("eight.png").into(),
+                _ => Color::GRAY.into(),
+            }
+        };
+        *mat_handle = materials.add(material);
+    }
 }
 
 impl Cell {

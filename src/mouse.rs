@@ -26,42 +26,13 @@ pub fn left_click(
                         if cell.flagged {
                             break;
                         }
-                        if cell.mine {
-                            *mat_handle = materials.add(asset_server.load("mine.png").into());
-                        } else {
-                            match cell.value {
-                                1 => {
-                                    *mat_handle = materials.add(asset_server.load("one.png").into())
-                                }
-                                2 => {
-                                    *mat_handle = materials.add(asset_server.load("two.png").into())
-                                }
-                                3 => {
-                                    *mat_handle =
-                                        materials.add(asset_server.load("three.png").into())
-                                }
-                                4 => {
-                                    *mat_handle =
-                                        materials.add(asset_server.load("four.png").into())
-                                }
-                                5 => {
-                                    *mat_handle =
-                                        materials.add(asset_server.load("five.png").into())
-                                }
-                                6 => {
-                                    *mat_handle = materials.add(asset_server.load("six.png").into())
-                                }
-                                7 => {
-                                    *mat_handle =
-                                        materials.add(asset_server.load("seven.png").into())
-                                }
-                                8 => {
-                                    *mat_handle =
-                                        materials.add(asset_server.load("eight.png").into())
-                                }
-                                _ => *mat_handle = materials.add(Color::GRAY.into()),
-                            }
-                        }
+                        basic_cell.apply_material(
+                            asset_server,
+                            materials,
+                            &mut mat_handle,
+                            cell.mine,
+                            cell.value,
+                        );
                     }
                     break;
                 }
