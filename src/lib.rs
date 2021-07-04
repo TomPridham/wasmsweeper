@@ -60,18 +60,24 @@ fn mouse_click_system(
     mouse_button_input: Res<Input<MouseButton>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
     mut windows: ResMut<Windows>,
-    mut board: Query<(&Board)>,
-    mut query: Query<(&BasicCell, &mut Transform, &mut Handle<ColorMaterial>)>,
+    mut board_query: Query<&mut Board>,
+    mut cell_query: Query<(&BasicCell, &mut Transform, &mut Handle<ColorMaterial>)>,
 ) {
     if mouse_button_input.just_released(MouseButton::Left) {
         let window = windows.get_primary_mut().unwrap();
         if let Some(cursor) = window.cursor_position() {
             log!("{:?}", cursor);
             let cursor = cursor - Vec2::new(window.width(), window.height()) / 2.0;
-            for (basic_cell, transform, mut mat_handle) in query.iter_mut() {
+            for (basic_cell, transform, mut mat_handle) in cell_query.iter_mut() {
+                if let Some(mut board) = board_query.iter_mut().next() {
+                    if !board.initialized {
+                        let row = basic_cell.row;
+                        let column = basic_cell.column;
+                        board.fill_board(4, (row, column));
+                    }
+                }
                 if basic_cell.contains(cursor) {
                     *mat_handle = materials.add(Color::BLUE.into());
-
                     log!("hurray");
                 }
             }

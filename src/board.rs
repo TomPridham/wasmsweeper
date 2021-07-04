@@ -18,9 +18,10 @@ const SURROUND: [(isize, isize); 8] = [
 ];
 
 pub struct Board {
-    cells: Vec<Vec<Cell>>,
-    height: usize,
-    width: usize,
+    pub cells: Vec<Vec<Cell>>,
+    pub initialized: bool,
+    pub height: usize,
+    pub width: usize,
 }
 
 impl Board {
@@ -122,15 +123,9 @@ pub fn generate_board(mut commands: Commands, mut materials: ResMut<Assets<Color
         })
         .collect();
 
-    // center the mines and move them up a bit
-    for row in 0usize..height {
-        for column in 0usize..width {
-            // mine
-        }
-    }
-
     commands.spawn().insert(Board {
         cells,
+        initialized: false,
         height,
         width,
     });
