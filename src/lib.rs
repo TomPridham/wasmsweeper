@@ -72,16 +72,51 @@ fn mouse_click_system(
             for (basic_cell, transform, mut mat_handle) in cell_query.iter_mut() {
                 if basic_cell.contains(cursor) {
                     if let Some(mut board) = board_query.iter_mut().next() {
+                        let row = basic_cell.row;
+                        let column = basic_cell.column;
                         if !board.initialized {
-                            let row = basic_cell.row;
-                            let column = basic_cell.column;
-                            board.fill_board(4, (row, column));
+                            board.fill_board(4, (row, column)).unwrap();
                         }
-                    }
-                    let sprite_handle = asset_server.load("one.png");
+                        let cell = &board.cells[row][column];
+                        if cell.mine {
+                            *mat_handle = materials.add(asset_server.load("mine.png").into());
+                        } else {
+                            match cell.value {
+                                1 => {
+                                    *mat_handle = materials.add(asset_server.load("one.png").into())
+                                }
+                                2 => {
+                                    *mat_handle = materials.add(asset_server.load("two.png").into())
+                                }
+                                3 => {
+                                    *mat_handle =
+                                        materials.add(asset_server.load("three.png").into())
+                                }
+                                4 => {
+                                    *mat_handle =
+                                        materials.add(asset_server.load("four.png").into())
+                                }
+                                5 => {
+                                    *mat_handle =
+                                        materials.add(asset_server.load("five.png").into())
+                                }
+                                6 => {
+                                    *mat_handle = materials.add(asset_server.load("six.png").into())
+                                }
+                                7 => {
+                                    *mat_handle =
+                                        materials.add(asset_server.load("seven.png").into())
+                                }
+                                8 => {
+                                    *mat_handle =
+                                        materials.add(asset_server.load("eight.png").into())
+                                }
+                                _ => *mat_handle = materials.add(Color::GRAY.into()),
+                            }
+                        }
 
-                    *mat_handle = materials.add(sprite_handle.into());
-                    log!("hurray");
+                        log!("hurray");
+                    }
                 }
             }
         }

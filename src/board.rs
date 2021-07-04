@@ -26,6 +26,7 @@ pub struct Board {
 
 impl Board {
     pub fn fill_board(&mut self, mines: u16, start: (usize, usize)) -> Result<(), Box<dyn Error>> {
+        self.initialized = true;
         let mut rng = SmallRng::from_entropy();
         if mines as usize >= self.height * self.width / 2 {
             return Err("You have requested too many mines for this size of board".into());
