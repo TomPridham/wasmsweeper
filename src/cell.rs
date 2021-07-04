@@ -1,8 +1,10 @@
 use bevy::prelude::*;
 
+pub const CELL_COLOR: bevy::prelude::Color = Color::MIDNIGHT_BLUE;
 #[derive(Debug)]
 pub struct Cell {
     pub column: usize,
+    pub flagged: bool,
     pub mine: bool,
     pub row: usize,
     pub value: u8,

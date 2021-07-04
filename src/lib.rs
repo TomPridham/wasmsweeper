@@ -1,19 +1,13 @@
 extern crate web_sys;
 mod board;
 mod cell;
+mod log;
+mod mouse;
 
 use bevy::prelude::*;
-use board::{generate_board, Board, BoardPlugin};
-use cell::{BasicCell, Cell, NewCell};
+use board::BoardPlugin;
+use mouse::MousePlugin;
 use wasm_bindgen::prelude::*;
-
-// A macro to provide `log!(..)`-style syntax for `console.log` logging.
-#[macro_use]
-macro_rules! log {
-    ( $( $t:tt )* ) => {
-        web_sys::console::log_1(&format!( $( $t )* ).into());
-    }
-}
 
 fn setup(mut commands: Commands, mut materials: ResMut<Assets<ColorMaterial>>) {
     // cameras
@@ -55,80 +49,12 @@ fn setup(mut commands: Commands, mut materials: ResMut<Assets<ColorMaterial>>) {
     });
 }
 
-// This system prints messages when you press or release the left mouse button:
-fn mouse_click_system(
-    mouse_button_input: Res<Input<MouseButton>>,
-    mut materials: ResMut<Assets<ColorMaterial>>,
-    mut windows: ResMut<Windows>,
-    mut board_query: Query<&mut Board>,
-    mut cell_query: Query<(&BasicCell, &mut Transform, &mut Handle<ColorMaterial>)>,
-    asset_server: Res<AssetServer>,
-) {
-    if mouse_button_input.just_released(MouseButton::Left) {
-        let window = windows.get_primary_mut().unwrap();
-        if let Some(cursor) = window.cursor_position() {
-            log!("{:?}", cursor);
-            let cursor = cursor - Vec2::new(window.width(), window.height()) / 2.0;
-            for (basic_cell, transform, mut mat_handle) in cell_query.iter_mut() {
-                if basic_cell.contains(cursor) {
-                    if let Some(mut board) = board_query.iter_mut().next() {
-                        let row = basic_cell.row;
-                        let column = basic_cell.column;
-                        if !board.initialized {
-                            board.fill_board(4, (row, column)).unwrap();
-                        }
-                        let cell = &board.cells[row][column];
-                        if cell.mine {
-                            *mat_handle = materials.add(asset_server.load("mine.png").into());
-                        } else {
-                            match cell.value {
-                                1 => {
-                                    *mat_handle = materials.add(asset_server.load("one.png").into())
-                                }
-                                2 => {
-                                    *mat_handle = materials.add(asset_server.load("two.png").into())
-                                }
-                                3 => {
-                                    *mat_handle =
-                                        materials.add(asset_server.load("three.png").into())
-                                }
-                                4 => {
-                                    *mat_handle =
-                                        materials.add(asset_server.load("four.png").into())
-                                }
-                                5 => {
-                                    *mat_handle =
-                                        materials.add(asset_server.load("five.png").into())
-                                }
-                                6 => {
-                                    *mat_handle = materials.add(asset_server.load("six.png").into())
-                                }
-                                7 => {
-                                    *mat_handle =
-                                        materials.add(asset_server.load("seven.png").into())
-                                }
-                                8 => {
-                                    *mat_handle =
-                                        materials.add(asset_server.load("eight.png").into())
-                                }
-                                _ => *mat_handle = materials.add(Color::GRAY.into()),
-                            }
-                        }
-
-                        log!("hurray");
-                    }
-                }
-            }
-        }
-    }
-}
-
 #[wasm_bindgen]
 pub fn run() {
     let mut app = App::build();
     app.add_plugins(DefaultPlugins);
     app.add_plugin(BoardPlugin);
-    app.add_system(mouse_click_system.system());
+    app.add_plugin(MousePlugin);
     app.insert_resource(ClearColor(Color::rgb(1.0, 1.0, 1.0)));
 
     app.add_startup_system(setup.system());

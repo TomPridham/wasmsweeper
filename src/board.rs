@@ -1,4 +1,4 @@
-use super::cell::{BasicCell, Cell, NewCell};
+use super::cell::{BasicCell, Cell, NewCell, CELL_COLOR};
 use bevy::prelude::*;
 use rand::{rngs::SmallRng, Rng, SeedableRng};
 use std::convert::TryFrom;
@@ -83,8 +83,7 @@ pub fn generate_board(mut commands: Commands, mut materials: ResMut<Assets<Color
         0.0,
     );
 
-    let mine_material = materials.add(Color::INDIGO.into());
-    let mm = materials.add(Color::RED.into());
+    let cell_material = materials.add(CELL_COLOR.into());
 
     let cells: Vec<Vec<Cell>> = (0..height)
         .map(|row| {
@@ -97,11 +96,7 @@ pub fn generate_board(mut commands: Commands, mut materials: ResMut<Assets<Color
                     ) + offset;
                     commands
                         .spawn_bundle(SpriteBundle {
-                            material: if column % 2 == 0 {
-                                mine_material.clone()
-                            } else {
-                                mm.clone()
-                            },
+                            material: cell_material.clone(),
                             sprite: Sprite::new(size),
                             transform: Transform::from_translation(position),
                             ..Default::default()
@@ -113,10 +108,11 @@ pub fn generate_board(mut commands: Commands, mut materials: ResMut<Assets<Color
                             size,
                         }));
                     Cell {
-                        mine: false,
-                        value: 0,
-                        row,
                         column,
+                        flagged: false,
+                        mine: false,
+                        row,
+                        value: 0,
                     }
                 })
                 .collect()
