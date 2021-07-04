@@ -4,7 +4,7 @@ mod cell;
 
 use bevy::prelude::*;
 use board::{generate_board, Board, BoardPlugin};
-use cell::{Cell, NewCell};
+use cell::{BasicCell, Cell, NewCell};
 use wasm_bindgen::prelude::*;
 
 // A macro to provide `log!(..)`-style syntax for `console.log` logging.
@@ -60,16 +60,18 @@ fn mouse_click_system(
     mouse_button_input: Res<Input<MouseButton>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
     mut windows: ResMut<Windows>,
-    mut query: Query<(&Cell, &mut Transform, &mut Handle<ColorMaterial>)>,
+    mut board: Query<(&Board)>,
+    mut query: Query<(&BasicCell, &mut Transform, &mut Handle<ColorMaterial>)>,
 ) {
     if mouse_button_input.just_released(MouseButton::Left) {
         let window = windows.get_primary_mut().unwrap();
         if let Some(cursor) = window.cursor_position() {
             log!("{:?}", cursor);
             let cursor = cursor - Vec2::new(window.width(), window.height()) / 2.0;
-            for (cell, transform, mut mat_handle) in query.iter_mut() {
-                if cell.contains(cursor) {
+            for (basic_cell, transform, mut mat_handle) in query.iter_mut() {
+                if basic_cell.contains(cursor) {
                     *mat_handle = materials.add(Color::BLUE.into());
+
                     log!("hurray");
                 }
             }

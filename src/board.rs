@@ -82,46 +82,50 @@ pub fn generate_board(mut commands: Commands, mut materials: ResMut<Assets<Color
         0.0,
     );
 
+    let mine_material = materials.add(Color::INDIGO.into());
+    let mm = materials.add(Color::RED.into());
+
     let cells: Vec<Vec<Cell>> = (0..height)
         .map(|row| {
             (0..width)
                 .map(|column| {
-                    Cell::new(NewCell {
-                        row,
-                        column,
+                    let position = Vec3::new(
+                        column as f32 * (size.x + spacing),
+                        row as f32 * (size.y + spacing),
+                        0.0,
+                    ) + offset;
+                    commands
+                        .spawn_bundle(SpriteBundle {
+                            material: if column % 2 == 0 {
+                                mine_material.clone()
+                            } else {
+                                mm.clone()
+                            },
+                            sprite: Sprite::new(size),
+                            transform: Transform::from_translation(position),
+                            ..Default::default()
+                        })
+                        .insert(BasicCell::new(NewCell {
+                            row,
+                            column,
+                            position,
+                            size,
+                        }));
+                    Cell {
                         mine: false,
                         value: 0,
-                        position: Vec3::new(
-                            column as f32 * (size.x + spacing),
-                            row as f32 * (size.y + spacing),
-                            0.0,
-                        ) + offset,
-
-                        size,
-                    })
+                        row,
+                        column,
+                    }
                 })
                 .collect()
         })
         .collect();
 
     // center the mines and move them up a bit
-    let mine_material = materials.add(Color::INDIGO.into());
-    let mm = materials.add(Color::RED.into());
     for row in 0usize..height {
         for column in 0usize..width {
             // mine
-            commands
-                .spawn_bundle(SpriteBundle {
-                    material: if column % 2 == 0 {
-                        mine_material.clone()
-                    } else {
-                        mm.clone()
-                    },
-                    sprite: Sprite::new(size),
-                    transform: Transform::from_translation(cells[row][column].position),
-                    ..Default::default()
-                })
-                .insert(BasicCell { column, row });
         }
     }
 

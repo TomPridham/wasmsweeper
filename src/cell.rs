@@ -1,51 +1,46 @@
 use bevy::prelude::*;
 
-pub struct BasicCell {
+#[derive(Debug)]
+pub struct Cell {
     pub column: usize,
+    pub mine: bool,
     pub row: usize,
+    pub value: u8,
 }
 
 pub struct NewCell {
     pub column: usize,
-    pub mine: bool,
     pub position: Vec3,
     pub row: usize,
     pub size: Vec2,
-    pub value: u8,
 }
-#[derive(Debug)]
-pub struct Cell {
-    pub mine: bool,
+
+pub struct BasicCell {
+    pub column: usize,
     pub position: Vec3,
-    pub value: u8,
-    pub x: usize,
-    pub y: usize,
+    pub row: usize,
     x0: f32,
     x1: f32,
     y0: f32,
     y1: f32,
 }
 
-impl Cell {
-    pub fn new(new_cell: NewCell) -> Cell {
+impl BasicCell {
+    pub fn new(new_cell: NewCell) -> Self {
         let NewCell {
             column,
-            mine,
             position,
             row,
             size,
-            value,
         } = new_cell;
-        Cell {
-            mine,
+        BasicCell {
             position,
-            value,
             x0: position.x - size.x / 2.0,
             x1: position.x + size.x / 2.0,
-            x: column,
+            column,
             y0: position.y - size.y / 2.0,
             y1: position.y + size.y / 2.0,
-            y: row,
+            row,
         }
     }
 
