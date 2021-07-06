@@ -1,14 +1,15 @@
 use crate::board::Board;
-use crate::cell::{BasicCell, CELL_COLOR};
+use crate::cell::{BasicCell, CELL_COLOR, SURROUND};
 use bevy::prelude::*;
 
 pub fn left_click(
+    asset_server: Res<AssetServer>,
     mouse_button_input: Res<Input<MouseButton>>,
-    mut materials: ResMut<Assets<ColorMaterial>>,
-    mut windows: ResMut<Windows>,
     mut board_query: Query<&mut Board>,
     mut cell_query: Query<(&BasicCell, &mut Handle<ColorMaterial>)>,
-    asset_server: Res<AssetServer>,
+    materials: ResMut<Assets<ColorMaterial>>,
+    mut selected_cell: ResMut<SelectedCell>,
+    mut windows: ResMut<Windows>,
 ) {
     if mouse_button_input.just_released(MouseButton::Left) {
         let window = windows.get_primary_mut().unwrap();
@@ -16,6 +17,7 @@ pub fn left_click(
             let cursor = cursor - Vec2::new(window.width(), window.height()) / 2.0;
             for (basic_cell, mut mat_handle) in cell_query.iter_mut() {
                 if basic_cell.contains(cursor) {
+                    selected_cell.entity = Some((basic_cell.row, basic_cell.column));
                     if let Some(mut board) = board_query.iter_mut().next() {
                         let row = basic_cell.row;
                         let column = basic_cell.column;
@@ -27,7 +29,7 @@ pub fn left_click(
                             break;
                         }
                         basic_cell.apply_material(
-                            asset_server,
+                            &asset_server,
                             materials,
                             &mut mat_handle,
                             cell.mine,
@@ -72,11 +74,17 @@ pub fn right_click(
     }
 }
 
+#[derive(Default)]
+pub struct SelectedCell {
+    entity: Option<(usize, usize)>,
+}
+
 pub struct MousePlugin;
 
 impl Plugin for MousePlugin {
     fn build(&self, app: &mut AppBuilder) {
-        app.add_system(left_click.system());
+        app.init_resource::<SelectedCell>();
+        app.add_system(left_click.system().label("left_click"));
         app.add_system(right_click.system());
     }
 }

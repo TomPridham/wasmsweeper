@@ -18,6 +18,7 @@ pub struct Cell {
     pub column: usize,
     pub flagged: bool,
     pub mine: bool,
+    pub opened: bool,
     pub row: usize,
     pub value: u8,
 }
@@ -64,7 +65,7 @@ impl BasicCell {
 
     pub fn apply_material(
         &self,
-        asset_server: Res<AssetServer>,
+        asset_server: &Res<AssetServer>,
         mut materials: ResMut<Assets<ColorMaterial>>,
         mat_handle: &mut Handle<ColorMaterial>,
         mine: bool,

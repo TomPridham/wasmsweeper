@@ -12,6 +12,19 @@ pub struct Board {
 }
 
 impl Board {
+    pub fn check_in_bounds(
+        &self,
+        (cell_row, cell_col): (usize, usize),
+        (row, col): (isize, isize),
+    ) -> Option<(usize, usize)> {
+        let r = cell_row as isize + row;
+        let c = cell_col as isize + col;
+        if r < 0 || c < 0 || r > self.height as isize || c > self.width as isize {
+            return None;
+        }
+        Some((r as usize, c as usize))
+    }
+
     pub fn fill_board(&mut self, mines: u16, start: (usize, usize)) -> Result<(), Box<dyn Error>> {
         self.initialized = true;
         let mut rng = SmallRng::from_entropy();
@@ -99,6 +112,7 @@ pub fn generate_board(mut commands: Commands, mut materials: ResMut<Assets<Color
                         column,
                         flagged: false,
                         mine: false,
+                        opened: false,
                         row,
                         value: 0,
                     }
