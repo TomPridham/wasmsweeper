@@ -1,8 +1,9 @@
 use crate::board::Board;
-use crate::mouse::CellClickEvent;
 use bevy::prelude::*;
 
 pub const CELL_COLOR: bevy::prelude::Color = Color::MIDNIGHT_BLUE;
+
+pub struct ApplyMaterialEvent(pub (usize, usize));
 
 pub const SURROUND: [(isize, isize); 8] = [
     (-1, -1),
@@ -70,7 +71,7 @@ fn apply_cell_material(
     asset_server: Res<AssetServer>,
     mut board_query: Query<&mut Board>,
     mut cell_query: Query<(&BasicCell, &mut Handle<ColorMaterial>)>,
-    mut ev_cell_click: EventReader<CellClickEvent>,
+    mut ev_apply_mat: EventReader<ApplyMaterialEvent>,
     mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
     let board = if let Some(b) = board_query.iter_mut().next() {
@@ -79,7 +80,7 @@ fn apply_cell_material(
         return;
     };
 
-    for CellClickEvent((row, col)) in ev_cell_click.iter() {
+    for ApplyMaterialEvent((row, col)) in ev_apply_mat.iter() {
         let row = *row;
         let col = *col;
         let mut mat_handle = if let Some((_cell, mat_handle)) = cell_query
@@ -124,6 +125,7 @@ pub struct CellPlugin;
 
 impl Plugin for CellPlugin {
     fn build(&self, app: &mut AppBuilder) {
+        app.add_event::<ApplyMaterialEvent>();
         app.add_system(apply_cell_material.system().after("left_click"));
     }
 }

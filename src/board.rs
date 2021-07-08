@@ -1,8 +1,10 @@
-use crate::cell::{BasicCell, Cell, NewCell, CELL_COLOR, SURROUND};
+use crate::cell::{ApplyMaterialEvent, BasicCell, Cell, NewCell, CELL_COLOR, SURROUND};
 use bevy::prelude::*;
 use rand::{rngs::SmallRng, Rng, SeedableRng};
 use std::convert::TryFrom;
 use std::error::Error;
+
+pub struct ClearOpenCellsEvent(pub (usize, usize));
 
 pub struct Board {
     pub cells: Vec<Vec<Cell>>,
@@ -19,10 +21,11 @@ impl Board {
     ) -> Option<(usize, usize)> {
         let r = cell_row as isize + row;
         let c = cell_col as isize + col;
-        if r < 0 || c < 0 || r > self.height as isize || c > self.width as isize {
-            return None;
+
+        if (0..self.height as isize).contains(&r) && (0..self.width as isize).contains(&c) {
+            return Some((r as usize, c as usize));
         }
-        Some((r as usize, c as usize))
+        return None;
     }
 
     pub fn fill_board(&mut self, mines: u16, start: (usize, usize)) -> Result<(), Box<dyn Error>> {
@@ -69,6 +72,49 @@ impl Board {
             })
         });
         Ok(())
+    }
+}
+
+pub fn clear_open_cells(
+    mut board_query: Query<&mut Board>,
+    mut cell_query: Query<&BasicCell>,
+    mut ev_apply_material: EventWriter<ApplyMaterialEvent>,
+    mut ev_open_cells: EventReader<ClearOpenCellsEvent>,
+) {
+    let mut board = if let Some(b) = board_query.iter_mut().next() {
+        b
+    } else {
+        return;
+    };
+
+    let mut queue: Vec<(usize, usize)> = ev_open_cells
+        .iter()
+        .map(|ClearOpenCellsEvent((row, col))| (*row, *col))
+        .collect();
+    while queue.len() > 0 {
+        let (curr_row, curr_col) = queue.pop().unwrap();
+        SURROUND.iter().for_each(|(surround_row, surround_col)| {
+            if let Some((valid_row, valid_col)) =
+                board.check_in_bounds((curr_row, curr_col), (*surround_row, *surround_col))
+            {
+                let cell = &mut board.cells[valid_row][valid_col];
+                if cell.opened {
+                    return;
+                }
+                if cell.value == 0 {
+                    queue.push((valid_row, valid_col));
+                }
+
+                cell.opened = true;
+                for basic_cell in cell_query.iter_mut() {
+                    if basic_cell.row == valid_row && basic_cell.column == valid_col {
+                        ev_apply_material.send(ApplyMaterialEvent((valid_row, valid_col)));
+
+                        break;
+                    }
+                }
+            }
+        });
     }
 }
 
@@ -133,6 +179,8 @@ pub struct BoardPlugin;
 
 impl Plugin for BoardPlugin {
     fn build(&self, app: &mut AppBuilder) {
+        app.add_event::<ClearOpenCellsEvent>();
         app.add_startup_system(generate_board.system());
+        app.add_system(clear_open_cells.system().after("left_click"));
     }
 }

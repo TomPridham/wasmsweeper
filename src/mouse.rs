@@ -1,5 +1,5 @@
-use crate::board::Board;
-use crate::cell::{BasicCell, CELL_COLOR};
+use crate::board::{Board, ClearOpenCellsEvent};
+use crate::cell::{ApplyMaterialEvent, BasicCell, CELL_COLOR};
 use bevy::prelude::*;
 
 pub struct CellClickEvent(pub (usize, usize));
@@ -8,9 +8,9 @@ pub fn left_click(
     mouse_button_input: Res<Input<MouseButton>>,
     mut board_query: Query<&mut Board>,
     mut cell_query: Query<&BasicCell>,
-    mut selected_cell: ResMut<SelectedCell>,
     mut windows: ResMut<Windows>,
-    mut ev_cell_click: EventWriter<CellClickEvent>,
+    mut ev_apply_material: EventWriter<ApplyMaterialEvent>,
+    mut ev_open_cells: EventWriter<ClearOpenCellsEvent>,
 ) {
     if mouse_button_input.just_released(MouseButton::Left) {
         let window = windows.get_primary_mut().unwrap();
@@ -18,18 +18,21 @@ pub fn left_click(
             let cursor = cursor - Vec2::new(window.width(), window.height()) / 2.0;
             for basic_cell in cell_query.iter_mut() {
                 if basic_cell.contains(cursor) {
-                    selected_cell.entity = Some((basic_cell.row, basic_cell.column));
                     if let Some(mut board) = board_query.iter_mut().next() {
                         let row = basic_cell.row;
                         let column = basic_cell.column;
                         if !board.initialized {
-                            board.fill_board(4, (row, column)).unwrap();
+                            board.fill_board(1, (row, column)).unwrap();
                         }
-                        let cell = &board.cells[row][column];
+                        let cell = &mut board.cells[row][column];
                         if cell.flagged {
                             break;
                         }
-                        ev_cell_click.send(CellClickEvent((row, column)));
+                        cell.opened = true;
+                        ev_apply_material.send(ApplyMaterialEvent((row, column)));
+                        if cell.value == 0 {
+                            ev_open_cells.send(ClearOpenCellsEvent((row, column)));
+                        }
                     }
                     break;
                 }
@@ -69,17 +72,11 @@ pub fn right_click(
     }
 }
 
-#[derive(Default)]
-pub struct SelectedCell {
-    entity: Option<(usize, usize)>,
-}
-
 pub struct MousePlugin;
 
 impl Plugin for MousePlugin {
     fn build(&self, app: &mut AppBuilder) {
         app.add_event::<CellClickEvent>();
-        app.init_resource::<SelectedCell>();
         app.add_system(left_click.system().label("left_click"));
         app.add_system(right_click.system());
     }
