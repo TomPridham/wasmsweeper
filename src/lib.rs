@@ -6,6 +6,7 @@ mod mouse;
 
 use bevy::prelude::*;
 use board::BoardPlugin;
+use cell::CellPlugin;
 use mouse::MousePlugin;
 use wasm_bindgen::prelude::*;
 
@@ -55,6 +56,7 @@ pub fn run() {
     app.add_plugins(DefaultPlugins);
     app.add_plugin(BoardPlugin);
     app.add_plugin(MousePlugin);
+    app.add_plugin(CellPlugin);
     app.insert_resource(ClearColor(Color::rgb(1.0, 1.0, 1.0)));
 
     app.add_startup_system(setup.system());
