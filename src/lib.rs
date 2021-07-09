@@ -10,6 +10,10 @@ use cell::CellPlugin;
 use mouse::MousePlugin;
 use wasm_bindgen::prelude::*;
 
+#[cfg(target_arch = "wasm32")]
+#[global_allocator]
+static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
+
 fn setup(mut commands: Commands, mut materials: ResMut<Assets<ColorMaterial>>) {
     // cameras
     commands.spawn_bundle(OrthographicCameraBundle::new_2d());
