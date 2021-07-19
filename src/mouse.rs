@@ -22,7 +22,7 @@ pub fn left_click(
                         let row = basic_cell.row;
                         let column = basic_cell.column;
                         if !board.initialized {
-                            board.fill_board(1, (row, column)).unwrap();
+                            board.fill_board(40, (row, column)).unwrap();
                         }
                         let cell = &mut board.cells[row][column];
                         if cell.flagged {

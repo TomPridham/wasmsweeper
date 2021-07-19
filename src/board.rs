@@ -43,7 +43,7 @@ impl Board {
             let row = rng.gen_range(0..rows);
             let col = rng.gen_range(0..columns);
             let cell = &mut self.cells[row][col];
-            if row == start.0 && col == start.1 || cell.surrounds((row, col)) {
+            if row == start.0 && col == start.1 || cell.surrounds((start.0, start.1)) {
                 continue;
             }
 
@@ -119,10 +119,10 @@ pub fn clear_open_cells(
 }
 
 pub fn generate_board(mut commands: Commands, mut materials: ResMut<Assets<ColorMaterial>>) {
-    let height = 4usize;
-    let width = 4usize;
+    let height = 16usize;
+    let width = 16usize;
     let spacing = 2.0;
-    let size = Vec2::new(96.0, 96.0);
+    let size = Vec2::new(22.0, 22.0);
     let mine_width = width as f32 * (size.x + spacing) - spacing;
     let offset = Vec3::new(
         -(mine_width - size.x) / 2.0,
