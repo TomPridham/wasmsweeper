@@ -4,6 +4,9 @@ name = "minesweeper"
 version = "0.1.0"
 authors = ["Tom Pridham <pridham.tom@gmail.com>"]
 edition = "2018"
+description = "a minesweeper clone built with bevy that can compile to wasm"
+repository = "https://github.com/TomPridham/wasmsweeper"
+license = "MIT"
 resolver = "2"
 
 [lib]
