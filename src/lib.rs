@@ -58,8 +58,8 @@ fn setup(mut commands: Commands, mut materials: ResMut<Assets<ColorMaterial>>) {
 pub fn run() {
     let mut app = App::build();
     app.add_plugins(DefaultPlugins);
-    app.add_plugin(BoardPlugin);
     app.add_plugin(MousePlugin);
+    app.add_plugin(BoardPlugin);
     app.add_plugin(CellPlugin);
     app.insert_resource(ClearColor(Color::rgb(1.0, 1.0, 1.0)));
 
@@ -68,8 +68,6 @@ pub fn run() {
     // when building for Web, use WebGL2 rendering
     #[cfg(target_arch = "wasm32")]
     app.add_plugin(bevy_webgl2::WebGL2Plugin);
-
-    // TODO: add all your other stuff to `app` as usual
 
     app.run();
 }

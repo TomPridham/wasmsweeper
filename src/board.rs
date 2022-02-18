@@ -5,11 +5,15 @@ use std::convert::TryFrom;
 use std::error::Error;
 
 pub struct ClearOpenCellsEvent(pub (usize, usize));
+pub struct MineClickedEvent;
+pub struct AllCellsOpenedEvent;
 
 pub struct Board {
     pub cells: Vec<Vec<Cell>>,
-    pub initialized: bool,
+    pub cells_unopened: usize,
+    pub game_over: bool,
     pub height: usize,
+    pub initialized: bool,
     pub width: usize,
 }
 
@@ -29,15 +33,20 @@ impl Board {
     }
 
     pub fn fill_board(&mut self, mines: u16, start: (usize, usize)) -> Result<(), Box<dyn Error>> {
-        self.initialized = true;
-        let mut rng = SmallRng::from_entropy();
-        if mines as usize >= self.height * self.width / 2 {
+        let board_size = self.height * self.width;
+
+        if mines as usize >= board_size / 2 {
             return Err("You have requested too many mines for this size of board".into());
         }
+
+        self.cells_unopened = board_size - mines as usize;
+        self.initialized = true;
 
         let rows = self.height as usize;
         let columns = self.width as usize;
         let mut curr_mines = 0;
+
+        let mut rng = SmallRng::from_entropy();
 
         while curr_mines < mines {
             let row = rng.gen_range(0..rows);
@@ -75,11 +84,41 @@ impl Board {
     }
 }
 
+pub fn game_over(
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
+    mut materials: ResMut<Assets<ColorMaterial>>,
+    mut ev_mine_clicked: EventReader<MineClickedEvent>,
+    mut ev_all_opened: EventReader<AllCellsOpenedEvent>,
+    mut board_query: Query<&mut Board>,
+) {
+    let mat = if ev_mine_clicked.iter().next().is_some() {
+        asset_server.load("u_lose.png")
+    } else if ev_all_opened.iter().next().is_some() {
+        asset_server.load("u_win.png")
+    } else {
+        return;
+    };
+
+    if let Some(mut board) = board_query.iter_mut().next() {
+        board.game_over = true;
+    }
+
+    let mut transform = Transform::from_xyz(0.0, 250.0, 1.0);
+    transform.apply_non_uniform_scale(Vec3::new(3.0, 3.0, 3.0));
+    commands.spawn_bundle(SpriteBundle {
+        material: materials.add(mat.into()),
+        transform,
+        ..Default::default()
+    });
+}
+
 pub fn clear_open_cells(
     mut board_query: Query<&mut Board>,
     mut cell_query: Query<&BasicCell>,
     mut ev_apply_material: EventWriter<ApplyMaterialEvent>,
     mut ev_open_cells: EventReader<ClearOpenCellsEvent>,
+    mut ev_all_opened: EventWriter<AllCellsOpenedEvent>,
 ) {
     let mut board = if let Some(b) = board_query.iter_mut().next() {
         b
@@ -106,6 +145,7 @@ pub fn clear_open_cells(
                 }
 
                 cell.opened = true;
+                board.cells_unopened -= 1;
                 for basic_cell in cell_query.iter_mut() {
                     if basic_cell.row == valid_row && basic_cell.column == valid_col {
                         ev_apply_material.send(ApplyMaterialEvent((valid_row, valid_col)));
@@ -115,6 +155,10 @@ pub fn clear_open_cells(
                 }
             }
         });
+    }
+
+    if board.cells_unopened == 0 {
+        ev_all_opened.send(AllCellsOpenedEvent);
     }
 }
 
@@ -169,8 +213,10 @@ pub fn generate_board(mut commands: Commands, mut materials: ResMut<Assets<Color
 
     commands.spawn().insert(Board {
         cells,
-        initialized: false,
+        cells_unopened: usize::MAX,
+        game_over: false,
         height,
+        initialized: false,
         width,
     });
 }
@@ -180,7 +226,10 @@ pub struct BoardPlugin;
 impl Plugin for BoardPlugin {
     fn build(&self, app: &mut AppBuilder) {
         app.add_event::<ClearOpenCellsEvent>();
+        app.add_event::<MineClickedEvent>();
+        app.add_event::<AllCellsOpenedEvent>();
         app.add_startup_system(generate_board.system());
         app.add_system(clear_open_cells.system().after("left_click"));
+        app.add_system(game_over.system().after("left_click"));
     }
 }
