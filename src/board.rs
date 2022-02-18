@@ -5,6 +5,7 @@ use std::convert::TryFrom;
 use std::error::Error;
 
 pub struct ClearOpenCellsEvent(pub (usize, usize));
+pub struct ChordSolvedCellEvent(pub (usize, usize));
 pub struct MineClickedEvent;
 pub struct AllCellsOpenedEvent;
 
@@ -137,7 +138,7 @@ pub fn clear_open_cells(
                 board.check_in_bounds((curr_row, curr_col), (*surround_row, *surround_col))
             {
                 let cell = &mut board.cells[valid_row][valid_col];
-                if cell.opened {
+                if cell.opened || cell.mine || cell.flagged {
                     return;
                 }
                 if cell.value == 0 {
@@ -159,6 +160,40 @@ pub fn clear_open_cells(
 
     if board.cells_unopened == 0 {
         ev_all_opened.send(AllCellsOpenedEvent);
+    }
+}
+
+pub fn chord_solved_cell(
+    mut board_query: Query<&mut Board>,
+    mut ev_chord_cell: EventReader<ChordSolvedCellEvent>,
+    mut ev_open_cells: EventWriter<ClearOpenCellsEvent>,
+) {
+    let mut board = if let Some(b) = board_query.iter_mut().next() {
+        b
+    } else {
+        return;
+    };
+
+    if let Some(ChordSolvedCellEvent((row, col))) = ev_chord_cell.iter().next() {
+        let (row, col) = (*row, *col);
+        let chord_cell = &mut board.cells[row][col];
+        let mut mines_left = chord_cell.value;
+        SURROUND.iter().for_each(|(surround_row, surround_col)| {
+            if let Some((valid_row, valid_col)) =
+                board.check_in_bounds((row, col), (*surround_row, *surround_col))
+            {
+                let cell = &mut board.cells[valid_row][valid_col];
+                if cell.opened {
+                    return;
+                }
+                if cell.mine && cell.flagged {
+                    mines_left -= 1;
+                }
+            }
+        });
+        if mines_left == 0 {
+            ev_open_cells.send(ClearOpenCellsEvent((row, col)))
+        }
     }
 }
 
@@ -226,10 +261,12 @@ pub struct BoardPlugin;
 impl Plugin for BoardPlugin {
     fn build(&self, app: &mut AppBuilder) {
         app.add_event::<ClearOpenCellsEvent>();
+        app.add_event::<ChordSolvedCellEvent>();
         app.add_event::<MineClickedEvent>();
         app.add_event::<AllCellsOpenedEvent>();
         app.add_startup_system(generate_board.system());
         app.add_system(clear_open_cells.system().after("left_click"));
+        app.add_system(chord_solved_cell.system().after("left_click"));
         app.add_system(game_over.system().after("left_click"));
     }
 }

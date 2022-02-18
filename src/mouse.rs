@@ -1,4 +1,6 @@
-use crate::board::{AllCellsOpenedEvent, Board, ClearOpenCellsEvent, MineClickedEvent};
+use crate::board::{
+    AllCellsOpenedEvent, Board, ChordSolvedCellEvent, ClearOpenCellsEvent, MineClickedEvent,
+};
 use crate::cell::{ApplyMaterialEvent, BasicCell, CELL_COLOR};
 use bevy::prelude::*;
 
@@ -11,6 +13,7 @@ pub fn left_click(
     mut ev_open_cells: EventWriter<ClearOpenCellsEvent>,
     mut ev_mine_clicked: EventWriter<MineClickedEvent>,
     mut ev_all_opened: EventWriter<AllCellsOpenedEvent>,
+    mut ev_chord_cell: EventWriter<ChordSolvedCellEvent>,
 ) {
     if mouse_button_input.just_released(MouseButton::Left) {
         if let Some(board) = board_query.iter_mut().next() {
@@ -29,8 +32,15 @@ pub fn left_click(
                         if !board.initialized {
                             board.fill_board(40, (row, column)).unwrap();
                         }
+
                         let cell = &mut board.cells[row][column];
-                        if cell.flagged || cell.opened {
+
+                        if cell.flagged {
+                            break;
+                        }
+
+                        if cell.opened {
+                            ev_chord_cell.send(ChordSolvedCellEvent((row, column)));
                             break;
                         }
 
