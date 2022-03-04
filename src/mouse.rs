@@ -8,114 +8,129 @@ pub fn left_click(
     mouse_button_input: Res<Input<MouseButton>>,
     mut board_query: Query<&mut Board>,
     mut cell_query: Query<&BasicCell>,
-    mut windows: ResMut<Windows>,
-    mut ev_apply_material: EventWriter<ApplyMaterialEvent>,
-    mut ev_open_cells: EventWriter<ClearOpenCellsEvent>,
-    mut ev_mine_clicked: EventWriter<MineClickedEvent>,
     mut ev_all_opened: EventWriter<AllCellsOpenedEvent>,
+    mut ev_apply_material: EventWriter<ApplyMaterialEvent>,
     mut ev_chord_cell: EventWriter<ChordSolvedCellEvent>,
+    mut ev_mine_clicked: EventWriter<MineClickedEvent>,
+    mut ev_open_cells: EventWriter<ClearOpenCellsEvent>,
+    mut windows: ResMut<Windows>,
 ) {
-    if mouse_button_input.just_released(MouseButton::Left) {
-        if let Some(board) = board_query.iter_mut().next() {
-            if board.game_over {
-                return;
-            }
+    if !mouse_button_input.just_released(MouseButton::Left) {
+        return;
+    }
+    let mut board = if let Some(board) = board_query.iter_mut().next() {
+        if board.game_over {
+            return;
         }
-        let window = windows.get_primary_mut().unwrap();
-        if let Some(cursor) = window.cursor_position() {
-            let cursor = cursor - Vec2::new(window.width(), window.height()) / 2.0;
-            for basic_cell in cell_query.iter_mut() {
-                if basic_cell.contains(cursor) {
-                    if let Some(mut board) = board_query.iter_mut().next() {
-                        let row = basic_cell.row;
-                        let column = basic_cell.column;
-                        if !board.initialized {
-                            board.fill_board(40, (row, column)).unwrap();
-                        }
+        board
+    } else {
+        return;
+    };
 
-                        let cell = &mut board.cells[row][column];
+    let window = windows.get_primary_mut().unwrap();
+    let cursor = if let Some(cursor) = window.cursor_position() {
+        cursor - Vec2::new(window.width(), window.height()) / 2.0
+    } else {
+        return;
+    };
+    for basic_cell in cell_query.iter_mut() {
+        if !basic_cell.contains(cursor) {
+            break;
+        }
+        let row = basic_cell.row;
+        let column = basic_cell.column;
+        if !board.initialized {
+            board.fill_board(40, (row, column)).unwrap();
+        }
 
-                        if cell.flagged {
-                            break;
-                        }
+        let cell = &mut board.cells[row][column];
 
-                        if cell.opened {
-                            ev_chord_cell.send(ChordSolvedCellEvent((row, column)));
-                            break;
-                        }
+        if cell.flagged {
+            return;
+        }
 
-                        cell.opened = true;
-                        ev_apply_material.send(ApplyMaterialEvent((row, column)));
+        if cell.opened {
+            ev_chord_cell.send(ChordSolvedCellEvent((row, column)));
+            return;
+        }
 
-                        if cell.mine {
-                            ev_mine_clicked.send(MineClickedEvent);
-                            break;
-                        }
+        cell.opened = true;
+        ev_apply_material.send(ApplyMaterialEvent((row, column)));
 
-                        if cell.value == 0 {
-                            ev_open_cells.send(ClearOpenCellsEvent((row, column)));
-                            //break;
-                        }
+        if cell.mine {
+            ev_mine_clicked.send(MineClickedEvent);
+            return;
+        }
 
-                        board.cells_unopened -= 1;
-                        if board.cells_unopened == 0 {
-                            ev_all_opened.send(AllCellsOpenedEvent);
-                        }
-                    }
-                    break;
-                }
-            }
+        if cell.value == 0 {
+            ev_open_cells.send(ClearOpenCellsEvent((row, column)));
+        }
+
+        board.cells_unopened -= 1;
+        if board.cells_unopened == 0 {
+            ev_all_opened.send(AllCellsOpenedEvent);
         }
     }
 }
 
 pub fn right_click(
+    asset_server: Res<AssetServer>,
     mouse_button_input: Res<Input<MouseButton>>,
-    mut windows: ResMut<Windows>,
     mut board_query: Query<&mut Board>,
     mut cell_query: Query<(&BasicCell, Entity, &mut Sprite)>,
-    asset_server: Res<AssetServer>,
     mut commands: Commands,
+    mut windows: ResMut<Windows>,
 ) {
-    if mouse_button_input.just_released(MouseButton::Right) {
-        let window = windows.get_primary_mut().unwrap();
-        if let Some(cursor) = window.cursor_position() {
-            let cursor = cursor - Vec2::new(window.width(), window.height()) / 2.0;
-            for (basic_cell, entity, mut sprite) in cell_query.iter_mut() {
-                if basic_cell.contains(cursor) {
-                    if let Some(mut board) = board_query.iter_mut().next() {
-                        let row = basic_cell.row;
-                        let column = basic_cell.column;
-                        let cell = &mut board.cells[row][column];
-                        if cell.opened {
-                            break;
-                        }
+    if !mouse_button_input.just_released(MouseButton::Right) {
+        return;
+    }
 
-                        cell.flagged = !cell.flagged;
+    let mut board = if let Some(board) = board_query.iter_mut().next() {
+        if board.game_over {
+            return;
+        }
+        board
+    } else {
+        return;
+    };
 
-                        if cell.flagged {
-                            let child = commands
-                                .spawn_bundle(SpriteBundle {
-                                    sprite: Sprite {
-                                        custom_size: Some(Vec2::new(22.0, 22.0)),
-                                        ..Default::default()
-                                    },
+    let window = windows.get_primary_mut().unwrap();
+    let cursor = if let Some(cursor) = window.cursor_position() {
+        cursor - Vec2::new(window.width(), window.height()) / 2.0
+    } else {
+        return;
+    };
+    for (basic_cell, entity, mut sprite) in cell_query.iter_mut() {
+        if !basic_cell.contains(cursor) {
+            break;
+        }
+        let row = basic_cell.row;
+        let column = basic_cell.column;
+        let cell = &mut board.cells[row][column];
+        if cell.opened {
+            return;
+        }
 
-                                    texture: asset_server.load("flag.png"),
-                                    ..Default::default()
-                                })
-                                .id();
+        cell.flagged = !cell.flagged;
 
-                            // add the child to the parent
-                            commands.entity(entity).push_children(&[child]);
-                            sprite.color = Color::WHITE;
-                        } else {
-                            sprite.color = CELL_COLOR;
-                            commands.entity(entity).despawn_descendants();
-                        }
-                    }
-                }
-            }
+        if cell.flagged {
+            let child = commands
+                .spawn_bundle(SpriteBundle {
+                    sprite: Sprite {
+                        custom_size: Some(Vec2::new(22.0, 22.0)),
+                        ..Default::default()
+                    },
+
+                    texture: asset_server.load("flag.png"),
+                    ..Default::default()
+                })
+                .id();
+
+            commands.entity(entity).push_children(&[child]);
+            sprite.color = Color::WHITE;
+        } else {
+            sprite.color = CELL_COLOR;
+            commands.entity(entity).despawn_descendants();
         }
     }
 }

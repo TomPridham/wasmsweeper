@@ -37,7 +37,7 @@ impl Board {
     pub fn fill_board(&mut self, mines: u16, start: (usize, usize)) -> Result<(), Box<dyn Error>> {
         let board_size = self.height * self.width;
 
-        if mines as usize >= board_size / 2 {
+        if mines as usize >= board_size {
             return Err("You have requested too many mines for this size of board".into());
         }
 
@@ -72,10 +72,9 @@ impl Board {
 
                     if (0..rows).contains(&usize::try_from(surround_y).unwrap_or(usize::MAX))
                         && (0..columns).contains(&usize::try_from(surround_x).unwrap_or(usize::MAX))
+                        && self.cells[surround_y as usize][surround_x as usize].mine
                     {
-                        if self.cells[surround_y as usize][surround_x as usize].mine {
-                            return acc + 1;
-                        }
+                        return acc + 1;
                     }
                     return acc;
                 });
@@ -134,25 +133,28 @@ pub fn clear_open_cells(
     while queue.len() > 0 {
         let (curr_row, curr_col) = queue.pop().unwrap();
         SURROUND.iter().for_each(|(surround_row, surround_col)| {
-            if let Some((valid_row, valid_col)) =
+            let (valid_row, valid_col) = if let Some((valid_row, valid_col)) =
                 board.check_in_bounds((curr_row, curr_col), (*surround_row, *surround_col))
             {
-                let cell = &mut board.cells[valid_row][valid_col];
-                if cell.opened || cell.mine || cell.flagged {
+                (valid_row, valid_col)
+            } else {
+                return;
+            };
+
+            let cell = &mut board.cells[valid_row][valid_col];
+            if cell.opened || cell.mine || cell.flagged {
+                return;
+            }
+            if cell.value == 0 {
+                queue.push((valid_row, valid_col));
+            }
+
+            cell.opened = true;
+            board.cells_unopened -= 1;
+            for basic_cell in cell_query.iter_mut() {
+                if basic_cell.row == valid_row && basic_cell.column == valid_col {
+                    ev_apply_material.send(ApplyMaterialEvent((valid_row, valid_col)));
                     return;
-                }
-                if cell.value == 0 {
-                    queue.push((valid_row, valid_col));
-                }
-
-                cell.opened = true;
-                board.cells_unopened -= 1;
-                for basic_cell in cell_query.iter_mut() {
-                    if basic_cell.row == valid_row && basic_cell.column == valid_col {
-                        ev_apply_material.send(ApplyMaterialEvent((valid_row, valid_col)));
-
-                        break;
-                    }
                 }
             }
         });
@@ -179,18 +181,24 @@ pub fn chord_solved_cell(
         let chord_cell = &mut board.cells[row][col];
         let mut mines_left = chord_cell.value;
         SURROUND.iter().for_each(|(surround_row, surround_col)| {
-            if let Some((valid_row, valid_col)) =
+            let (valid_row, valid_col) = if let Some((valid_row, valid_col)) =
                 board.check_in_bounds((row, col), (*surround_row, *surround_col))
             {
-                let cell = &mut board.cells[valid_row][valid_col];
-                if cell.opened {
-                    return;
-                }
-                if cell.mine && cell.flagged {
-                    mines_left -= 1;
-                }
+                (valid_row, valid_col)
+            } else {
+                return;
+            };
+
+            let cell = &mut board.cells[valid_row][valid_col];
+            if cell.opened {
+                return;
+            }
+
+            if cell.mine && cell.flagged {
+                mines_left -= 1;
             }
         });
+
         if mines_left == 0 {
             ev_open_cells.send(ClearOpenCellsEvent((row, col)))
         }
