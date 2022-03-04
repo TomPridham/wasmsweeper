@@ -9,6 +9,7 @@ pub struct ChordSolvedCellEvent(pub (usize, usize));
 pub struct MineClickedEvent;
 pub struct AllCellsOpenedEvent;
 
+#[derive(Component)]
 pub struct Board {
     pub cells: Vec<Vec<Cell>>,
     pub cells_unopened: usize,
@@ -88,7 +89,6 @@ impl Board {
 pub fn game_over(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
-    mut materials: ResMut<Assets<ColorMaterial>>,
     mut ev_mine_clicked: EventReader<MineClickedEvent>,
     mut ev_all_opened: EventReader<AllCellsOpenedEvent>,
     mut board_query: Query<&mut Board>,
@@ -108,7 +108,7 @@ pub fn game_over(
     let mut transform = Transform::from_xyz(0.0, 250.0, 1.0);
     transform.apply_non_uniform_scale(Vec3::new(3.0, 3.0, 3.0));
     commands.spawn_bundle(SpriteBundle {
-        material: materials.add(mat.into()),
+        texture: mat.into(),
         transform,
         ..Default::default()
     });
@@ -197,7 +197,7 @@ pub fn chord_solved_cell(
     }
 }
 
-pub fn generate_board(mut commands: Commands, mut materials: ResMut<Assets<ColorMaterial>>) {
+pub fn generate_board(mut commands: Commands) {
     let height = 16usize;
     let width = 16usize;
     let spacing = 2.0;
@@ -208,8 +208,6 @@ pub fn generate_board(mut commands: Commands, mut materials: ResMut<Assets<Color
         -(mine_width - size.y) / 2.0,
         0.0,
     );
-
-    let cell_material = materials.add(CELL_COLOR.into());
 
     let cells: Vec<Vec<Cell>> = (0..height)
         .map(|row| {
@@ -222,8 +220,11 @@ pub fn generate_board(mut commands: Commands, mut materials: ResMut<Assets<Color
                     ) + offset;
                     commands
                         .spawn_bundle(SpriteBundle {
-                            material: cell_material.clone(),
-                            sprite: Sprite::new(size),
+                            sprite: Sprite {
+                                custom_size: Some(size),
+                                color: CELL_COLOR,
+                                ..Default::default()
+                            },
                             transform: Transform::from_translation(position),
                             ..Default::default()
                         })
@@ -247,8 +248,8 @@ pub fn generate_board(mut commands: Commands, mut materials: ResMut<Assets<Color
         .collect();
 
     commands.spawn().insert(Board {
+        cells_unopened: cells.len(),
         cells,
-        cells_unopened: usize::MAX,
         game_over: false,
         height,
         initialized: false,
@@ -259,14 +260,14 @@ pub fn generate_board(mut commands: Commands, mut materials: ResMut<Assets<Color
 pub struct BoardPlugin;
 
 impl Plugin for BoardPlugin {
-    fn build(&self, app: &mut AppBuilder) {
+    fn build(&self, app: &mut App) {
         app.add_event::<ClearOpenCellsEvent>();
         app.add_event::<ChordSolvedCellEvent>();
         app.add_event::<MineClickedEvent>();
         app.add_event::<AllCellsOpenedEvent>();
-        app.add_startup_system(generate_board.system());
-        app.add_system(clear_open_cells.system().after("left_click"));
-        app.add_system(chord_solved_cell.system().after("left_click"));
-        app.add_system(game_over.system().after("left_click"));
+        app.add_startup_system(generate_board);
+        app.add_system(clear_open_cells.after("left_click"));
+        app.add_system(chord_solved_cell.after("left_click"));
+        app.add_system(game_over.after("left_click"));
     }
 }

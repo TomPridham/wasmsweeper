@@ -1,33 +1,40 @@
-
 [package]
 name = "minesweeper"
 version = "0.1.0"
 authors = ["Tom Pridham <pridham.tom@gmail.com>"]
-edition = "2018"
+edition = "2021"
 description = "a minesweeper clone built with bevy that can compile to wasm"
 repository = "https://github.com/TomPridham/wasmsweeper"
 license = "MIT"
-resolver = "2"
 
 [lib]
 crate-type = ["cdylib", "rlib"]
 
 # Dependencies for all targets go here.
 [dependencies]
+bevy_ecs = "0.6.1"
 getrandom = { version = "0.2", features = ["wasm-bindgen"] }
-rand = { version="0.8.4", default-features = false , features=["small_rng"]}
+rand = { version = "0.8.4", default-features = false, features = ["small_rng"] }
 wasm-bindgen = "0.2"
-web-sys = {version = "0.3.46", features =["console"]}
+web-sys = { version = "0.3.46", features = ["console"] }
 wee_alloc = "0.4"
 
 # Dependencies for native only.
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-bevy = {version = "0.5", default-features = false, features = ["bevy_wgpu", "bevy_winit", "render", "x11", "dynamic"]}
+bevy = { version = "0.6.1", default-features = false, features = [
+  "bevy_winit",
+  "render",
+  "x11",
+  "dynamic"
+] }
 
 # Dependencies for WASM only.
 [target.'cfg(target_arch = "wasm32")'.dependencies]
-bevy = {version = "0.5", default-features = false, features = ["bevy_winit", "render"]}
-bevy_webgl2 = "0.5"
+bevy = { version = "0.6.1", default-features = false, features = [
+  "png",
+  "bevy_winit",
+  "render"
+] }
 
 [profile.release]
 lto = "thin"
