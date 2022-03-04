@@ -1,4 +1,5 @@
 use crate::board::Board;
+use bevy::ecs::component::Component;
 use bevy::prelude::*;
 
 pub const CELL_COLOR: bevy::prelude::Color = Color::MIDNIGHT_BLUE;
@@ -33,6 +34,7 @@ pub struct NewCell {
     pub size: Vec2,
 }
 
+#[derive(Component)]
 pub struct BasicCell {
     pub column: usize,
     pub position: Vec3,
@@ -70,9 +72,9 @@ impl BasicCell {
 fn apply_cell_material(
     asset_server: Res<AssetServer>,
     mut board_query: Query<&mut Board>,
-    mut cell_query: Query<(&BasicCell, &mut Handle<ColorMaterial>)>,
+    mut cell_query: Query<(&BasicCell, Entity, &mut Sprite)>,
     mut ev_apply_mat: EventReader<ApplyMaterialEvent>,
-    mut materials: ResMut<Assets<ColorMaterial>>,
+    mut commands: Commands,
 ) {
     let board = if let Some(b) = board_query.iter_mut().next() {
         b
@@ -83,32 +85,50 @@ fn apply_cell_material(
     for ApplyMaterialEvent((row, col)) in ev_apply_mat.iter() {
         let row = *row;
         let col = *col;
-        let mut mat_handle = if let Some((_cell, mat_handle)) = cell_query
+        let (entity, mut sprite) = if let Some((_cell, entity, sprite)) = cell_query
             .iter_mut()
-            .find(|(basic_cell, _mat_handle)| basic_cell.row == row && basic_cell.column == col)
+            .find(|(basic_cell, _, _)| basic_cell.row == row && basic_cell.column == col)
         {
-            mat_handle
+            (entity, sprite)
         } else {
             return;
         };
 
         let cell = &board.cells[row][col];
-        let material = if cell.mine {
-            asset_server.load("mine.png").into()
+        if cell.value == 0 {
+            sprite.color = Color::GRAY;
+        } else {
+            sprite.color = Color::WHITE;
+        }
+
+        let texture = if cell.mine {
+            asset_server.load("mine.png")
         } else {
             match cell.value {
-                1 => asset_server.load("one.png").into(),
-                2 => asset_server.load("two.png").into(),
-                3 => asset_server.load("three.png").into(),
-                4 => asset_server.load("four.png").into(),
-                5 => asset_server.load("five.png").into(),
-                6 => asset_server.load("six.png").into(),
-                7 => asset_server.load("seven.png").into(),
-                8 => asset_server.load("eight.png").into(),
-                _ => Color::GRAY.into(),
+                1 => asset_server.load("one.png"),
+                2 => asset_server.load("two.png"),
+                3 => asset_server.load("three.png"),
+                4 => asset_server.load("four.png"),
+                5 => asset_server.load("five.png"),
+                6 => asset_server.load("six.png"),
+                7 => asset_server.load("seven.png"),
+                8 => asset_server.load("eight.png"),
+                _ => Default::default(),
             }
         };
-        *mat_handle = materials.add(material);
+        let child = commands
+            .spawn_bundle(SpriteBundle {
+                sprite: Sprite {
+                    custom_size: Some(Vec2::new(22.0, 22.0)),
+                    ..Default::default()
+                },
+
+                texture,
+                ..Default::default()
+            })
+            .id();
+
+        commands.entity(entity).push_children(&[child]);
     }
 }
 
@@ -124,8 +144,8 @@ impl Cell {
 pub struct CellPlugin;
 
 impl Plugin for CellPlugin {
-    fn build(&self, app: &mut AppBuilder) {
+    fn build(&self, app: &mut App) {
         app.add_event::<ApplyMaterialEvent>();
-        app.add_system(apply_cell_material.system().after("left_click"));
+        app.add_system(apply_cell_material.after("left_click"));
     }
 }

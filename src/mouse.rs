@@ -71,17 +71,17 @@ pub fn left_click(
 
 pub fn right_click(
     mouse_button_input: Res<Input<MouseButton>>,
-    mut materials: ResMut<Assets<ColorMaterial>>,
     mut windows: ResMut<Windows>,
     mut board_query: Query<&mut Board>,
-    mut cell_query: Query<(&BasicCell, &mut Handle<ColorMaterial>)>,
+    mut cell_query: Query<(&BasicCell, Entity, &mut Sprite)>,
     asset_server: Res<AssetServer>,
+    mut commands: Commands,
 ) {
     if mouse_button_input.just_released(MouseButton::Right) {
         let window = windows.get_primary_mut().unwrap();
         if let Some(cursor) = window.cursor_position() {
             let cursor = cursor - Vec2::new(window.width(), window.height()) / 2.0;
-            for (basic_cell, mut mat_handle) in cell_query.iter_mut() {
+            for (basic_cell, entity, mut sprite) in cell_query.iter_mut() {
                 if basic_cell.contains(cursor) {
                     if let Some(mut board) = board_query.iter_mut().next() {
                         let row = basic_cell.row;
@@ -90,11 +90,28 @@ pub fn right_click(
                         if cell.opened {
                             break;
                         }
+
                         cell.flagged = !cell.flagged;
+
                         if cell.flagged {
-                            *mat_handle = materials.add(asset_server.load("flag.png").into());
+                            let child = commands
+                                .spawn_bundle(SpriteBundle {
+                                    sprite: Sprite {
+                                        custom_size: Some(Vec2::new(22.0, 22.0)),
+                                        ..Default::default()
+                                    },
+
+                                    texture: asset_server.load("flag.png"),
+                                    ..Default::default()
+                                })
+                                .id();
+
+                            // add the child to the parent
+                            commands.entity(entity).push_children(&[child]);
+                            sprite.color = Color::WHITE;
                         } else {
-                            *mat_handle = materials.add(CELL_COLOR.into());
+                            sprite.color = CELL_COLOR;
+                            commands.entity(entity).despawn_descendants();
                         }
                     }
                 }
@@ -106,8 +123,8 @@ pub fn right_click(
 pub struct MousePlugin;
 
 impl Plugin for MousePlugin {
-    fn build(&self, app: &mut AppBuilder) {
-        app.add_system(left_click.system().label("left_click"));
-        app.add_system(right_click.system());
+    fn build(&self, app: &mut App) {
+        app.add_system(left_click.label("left_click"));
+        app.add_system(right_click);
     }
 }
