@@ -19,14 +19,11 @@ pub fn left_click(
     if !mouse_button_input.just_released(MouseButton::Left) {
         return;
     }
-    let mut board = if let Some(board) = board_query.iter_mut().next() {
-        if board.game_over {
-            return;
-        }
-        board
-    } else {
+    let mut board = board_query.single_mut();
+
+    if board.game_over {
         return;
-    };
+    }
 
     let window = windows.get_primary_mut().unwrap();
     let cursor = if let Some(cursor) = window.cursor_position() {
@@ -87,14 +84,10 @@ pub fn right_click(
         return;
     }
 
-    let mut board = if let Some(board) = board_query.iter_mut().next() {
-        if board.game_over {
-            return;
-        }
-        board
-    } else {
+    let mut board = board_query.single_mut();
+    if board.game_over {
         return;
-    };
+    }
 
     let window = windows.get_primary_mut().unwrap();
     let cursor = if let Some(cursor) = window.cursor_position() {

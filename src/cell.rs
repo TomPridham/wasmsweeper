@@ -71,16 +71,12 @@ impl BasicCell {
 
 fn apply_cell_material(
     asset_server: Res<AssetServer>,
-    mut board_query: Query<&mut Board>,
+    board_query: Query<&mut Board>,
     mut cell_query: Query<(&BasicCell, Entity, &mut Sprite)>,
     mut ev_apply_mat: EventReader<ApplyMaterialEvent>,
     mut commands: Commands,
 ) {
-    let board = if let Some(b) = board_query.iter_mut().next() {
-        b
-    } else {
-        return;
-    };
+    let board = board_query.single();
 
     for ApplyMaterialEvent((row, col)) in ev_apply_mat.iter() {
         let row = *row;

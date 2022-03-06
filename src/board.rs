@@ -101,9 +101,7 @@ pub fn game_over(
         return;
     };
 
-    if let Some(mut board) = board_query.iter_mut().next() {
-        board.game_over = true;
-    }
+    board_query.single_mut().game_over = true;
 
     let mut transform = Transform::from_xyz(0.0, 250.0, 1.0);
     transform.apply_non_uniform_scale(Vec3::new(3.0, 3.0, 3.0));
@@ -121,11 +119,7 @@ pub fn clear_open_cells(
     mut ev_open_cells: EventReader<ClearOpenCellsEvent>,
     mut ev_all_opened: EventWriter<AllCellsOpenedEvent>,
 ) {
-    let mut board = if let Some(b) = board_query.iter_mut().next() {
-        b
-    } else {
-        return;
-    };
+    let mut board = board_query.single_mut();
 
     let mut queue: Vec<(usize, usize)> = ev_open_cells
         .iter()
@@ -171,11 +165,7 @@ pub fn chord_solved_cell(
     mut ev_chord_cell: EventReader<ChordSolvedCellEvent>,
     mut ev_open_cells: EventWriter<ClearOpenCellsEvent>,
 ) {
-    let mut board = if let Some(b) = board_query.iter_mut().next() {
-        b
-    } else {
-        return;
-    };
+    let mut board = board_query.single_mut();
 
     if let Some(ChordSolvedCellEvent((row, col))) = ev_chord_cell.iter().next() {
         let (row, col) = (*row, *col);
@@ -213,11 +203,7 @@ pub fn flag_solved_cell(
     mut commands: Commands,
     mut ev_flag_cell: EventReader<FlagSolvedCellEvent>,
 ) {
-    let mut board = if let Some(b) = board_query.iter_mut().next() {
-        b
-    } else {
-        return;
-    };
+    let mut board = board_query.single_mut();
 
     let (row, col) = if let Some(FlagSolvedCellEvent((row, col))) = ev_flag_cell.iter().next() {
         (*row, *col)
