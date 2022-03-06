@@ -35,7 +35,7 @@ pub fn left_click(
     };
     for basic_cell in cell_query.iter_mut() {
         if !basic_cell.contains(cursor) {
-            break;
+            continue;
         }
         let row = basic_cell.row;
         let column = basic_cell.column;
@@ -102,7 +102,7 @@ pub fn right_click(
     };
     for (basic_cell, entity, mut sprite) in cell_query.iter_mut() {
         if !basic_cell.contains(cursor) {
-            break;
+            continue;
         }
         let row = basic_cell.row;
         let column = basic_cell.column;
