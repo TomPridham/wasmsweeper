@@ -4,12 +4,8 @@ args = ["build", "--target", "web", "--dev"]
 watch = true
 
 [tasks.release]
-run_task = { name = ["build-release", "opt-size"] }
+run_task = { name = ["build-release"] }
 
 [tasks.build-release]
 command = "wasm-pack"
 args = ["build", "--target", "web"]
-
-[tasks.opt-size]
-command = "wasm-opt"
-args = ["-Oz", "-o", "pkg/minesweeper_bg_opt.wasm", "pkg/minesweeper_bg.wasm"]

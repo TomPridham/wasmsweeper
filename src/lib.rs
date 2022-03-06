@@ -14,6 +14,8 @@ use wasm_bindgen::prelude::*;
 #[global_allocator]
 static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 
+#[cfg(not(target_arch = "wasm32"))]
+fn load_images() {}
 // preload all the images on wasm since they are http requests and can take some time
 #[cfg(target_arch = "wasm32")]
 #[allow(unused_must_use)]
@@ -84,16 +86,15 @@ fn setup(mut commands: Commands) {
 
 #[wasm_bindgen]
 pub fn run() {
-    let mut app = App::new();
-    app.add_plugins(DefaultPlugins);
-    app.add_plugin(MousePlugin);
-    app.add_plugin(BoardPlugin);
-    app.add_plugin(CellPlugin);
-    app.insert_resource(ClearColor(Color::rgb(0.9, 0.9, 0.9)));
-
     #[cfg(target_arch = "wasm32")]
-    app.add_startup_system(load_images);
-    app.add_startup_system(setup);
-
-    app.run();
+    console_error_panic_hook::set_once();
+    App::new()
+        .add_plugins(DefaultPlugins)
+        .add_plugin(MousePlugin)
+        .add_plugin(BoardPlugin)
+        .add_plugin(CellPlugin)
+        .insert_resource(ClearColor(Color::rgb(0.9, 0.9, 0.9)))
+        .add_startup_system(load_images)
+        .add_startup_system(setup)
+        .run();
 }

@@ -1490,6 +1490,7 @@ version = "0.1.0"
 dependencies = [
  "bevy",
  "bevy_ecs",
+ "console_error_panic_hook",
  "getrandom",
  "rand",
  "wasm-bindgen",
