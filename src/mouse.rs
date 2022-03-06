@@ -1,5 +1,6 @@
 use crate::board::{
-    AllCellsOpenedEvent, Board, ChordSolvedCellEvent, ClearOpenCellsEvent, MineClickedEvent,
+    AllCellsOpenedEvent, Board, ChordSolvedCellEvent, ClearOpenCellsEvent, FlagSolvedCellEvent,
+    MineClickedEvent,
 };
 use crate::cell::{ApplyMaterialEvent, BasicCell, CELL_COLOR};
 use bevy::prelude::*;
@@ -79,6 +80,7 @@ pub fn right_click(
     mut board_query: Query<&mut Board>,
     mut cell_query: Query<(&BasicCell, Entity, &mut Sprite)>,
     mut commands: Commands,
+    mut ev_flag_cell: EventWriter<FlagSolvedCellEvent>,
     mut windows: ResMut<Windows>,
 ) {
     if !mouse_button_input.just_released(MouseButton::Right) {
@@ -108,6 +110,7 @@ pub fn right_click(
         let column = basic_cell.column;
         let cell = &mut board.cells[row][column];
         if cell.opened {
+            ev_flag_cell.send(FlagSolvedCellEvent((row, column)));
             return;
         }
 
@@ -140,6 +143,6 @@ pub struct MousePlugin;
 impl Plugin for MousePlugin {
     fn build(&self, app: &mut App) {
         app.add_system(left_click.label("left_click"));
-        app.add_system(right_click);
+        app.add_system(right_click.label("right_click"));
     }
 }

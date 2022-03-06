@@ -6,6 +6,7 @@ use std::error::Error;
 
 pub struct ClearOpenCellsEvent(pub (usize, usize));
 pub struct ChordSolvedCellEvent(pub (usize, usize));
+pub struct FlagSolvedCellEvent(pub (usize, usize));
 pub struct MineClickedEvent;
 pub struct AllCellsOpenedEvent;
 
@@ -205,6 +206,77 @@ pub fn chord_solved_cell(
     }
 }
 
+pub fn flag_solved_cell(
+    asset_server: Res<AssetServer>,
+    mut board_query: Query<&mut Board>,
+    mut cell_query: Query<(&BasicCell, Entity, &mut Sprite)>,
+    mut commands: Commands,
+    mut ev_flag_cell: EventReader<FlagSolvedCellEvent>,
+) {
+    let mut board = if let Some(b) = board_query.iter_mut().next() {
+        b
+    } else {
+        return;
+    };
+
+    let (row, col) = if let Some(FlagSolvedCellEvent((row, col))) = ev_flag_cell.iter().next() {
+        (*row, *col)
+    } else {
+        return;
+    };
+
+    let flag_cell = &board.cells[row][col];
+    let unopened_cells = SURROUND.into_iter().fold(
+        vec![],
+        |mut unopened_cells, (surround_row, surround_col)| {
+            let (valid_row, valid_col) = if let Some((valid_row, valid_col)) =
+                board.check_in_bounds((row, col), (surround_row, surround_col))
+            {
+                (valid_row, valid_col)
+            } else {
+                return unopened_cells;
+            };
+
+            let cell = &board.cells[valid_row][valid_col];
+            if cell.opened {
+                return unopened_cells;
+            }
+            unopened_cells.push((valid_row, valid_col));
+            unopened_cells
+        },
+    );
+
+    if unopened_cells.len() != flag_cell.value as usize {
+        return;
+    }
+    unopened_cells.into_iter().for_each(|(row, col)| {
+        for (basic_cell, entity, mut sprite) in cell_query.iter_mut() {
+            if !(row == basic_cell.row && col == basic_cell.column) {
+                continue;
+            }
+            let cell = &mut board.cells[row][col];
+
+            if !cell.flagged {
+                cell.flagged = true;
+                let child = commands
+                    .spawn_bundle(SpriteBundle {
+                        sprite: Sprite {
+                            custom_size: Some(Vec2::new(22.0, 22.0)),
+                            ..Default::default()
+                        },
+
+                        texture: asset_server.load("flag.png"),
+                        ..Default::default()
+                    })
+                    .id();
+
+                commands.entity(entity).push_children(&[child]);
+                sprite.color = Color::WHITE;
+            }
+        }
+    })
+}
+
 pub fn generate_board(mut commands: Commands) {
     let height = 16usize;
     let width = 16usize;
@@ -271,11 +343,13 @@ impl Plugin for BoardPlugin {
     fn build(&self, app: &mut App) {
         app.add_event::<ClearOpenCellsEvent>();
         app.add_event::<ChordSolvedCellEvent>();
+        app.add_event::<FlagSolvedCellEvent>();
         app.add_event::<MineClickedEvent>();
         app.add_event::<AllCellsOpenedEvent>();
         app.add_startup_system(generate_board);
         app.add_system(clear_open_cells.after("left_click"));
         app.add_system(chord_solved_cell.after("left_click"));
         app.add_system(game_over.after("left_click"));
+        app.add_system(flag_solved_cell.after("right_click"));
     }
 }
