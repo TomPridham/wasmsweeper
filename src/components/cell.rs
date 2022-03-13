@@ -1,5 +1,6 @@
-use crate::board::Board;
-use bevy::ecs::component::Component;
+use super::board::Board;
+use crate::AppState;
+
 use bevy::prelude::*;
 
 pub const CELL_COLOR: bevy::prelude::Color = Color::MIDNIGHT_BLUE;
@@ -141,7 +142,10 @@ pub struct CellPlugin;
 
 impl Plugin for CellPlugin {
     fn build(&self, app: &mut App) {
+        app.add_system_set(
+            SystemSet::on_update(AppState::InGame)
+                .with_system(apply_cell_material.after("left_click")),
+        );
         app.add_event::<ApplyMaterialEvent>();
-        app.add_system(apply_cell_material.after("left_click"));
     }
 }

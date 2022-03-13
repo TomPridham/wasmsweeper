@@ -1,8 +1,7 @@
-use crate::board::{
-    AllCellsOpenedEvent, Board, ChordSolvedCellEvent, ClearOpenCellsEvent, FlagSolvedCellEvent,
-    MineClickedEvent,
+use crate::components::{
+    AllCellsOpenedEvent, ApplyMaterialEvent, BasicCell, Board, ChordSolvedCellEvent,
+    ClearOpenCellsEvent, FlagSolvedCellEvent, MineClickedEvent, CELL_COLOR,
 };
-use crate::cell::{ApplyMaterialEvent, BasicCell, CELL_COLOR};
 use crate::AppState;
 
 use bevy::prelude::*;

@@ -1,12 +1,10 @@
 extern crate web_sys;
-mod board;
-mod cell;
+mod components;
 mod log;
 mod mouse;
 
 use bevy::prelude::*;
-use board::BoardPlugin;
-use cell::CellPlugin;
+use components::ComponentsPlugin;
 use mouse::MousePlugin;
 use wasm_bindgen::prelude::*;
 
@@ -94,9 +92,8 @@ pub fn run() {
 
     App::new()
         .add_plugins(DefaultPlugins)
-        .add_plugin(BoardPlugin)
         .add_plugin(MousePlugin)
-        .add_plugin(CellPlugin)
+        .add_plugin(ComponentsPlugin)
         .add_state(AppState::InGame)
         .insert_resource(ClearColor(Color::rgb(0.9, 0.9, 0.9)))
         .add_startup_system(load_images)

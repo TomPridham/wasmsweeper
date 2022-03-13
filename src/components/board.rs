@@ -1,4 +1,6 @@
-use crate::cell::{ApplyMaterialEvent, BasicCell, Cell, NewCell, CELL_COLOR, SURROUND};
+use super::cell::{ApplyMaterialEvent, BasicCell, Cell, NewCell, CELL_COLOR, SURROUND};
+use crate::AppState;
+
 use bevy::prelude::*;
 use rand::{rngs::SmallRng, Rng, SeedableRng};
 use std::convert::TryFrom;
@@ -327,15 +329,18 @@ pub struct BoardPlugin;
 
 impl Plugin for BoardPlugin {
     fn build(&self, app: &mut App) {
+        app.add_system_set(
+            SystemSet::on_update(AppState::InGame)
+                .with_system(clear_open_cells.after("left_click"))
+                .with_system(chord_solved_cell.after("left_click"))
+                .with_system(game_over.after("left_click"))
+                .with_system(flag_solved_cell.after("right_click")),
+        );
         app.add_event::<ClearOpenCellsEvent>();
         app.add_event::<ChordSolvedCellEvent>();
         app.add_event::<FlagSolvedCellEvent>();
         app.add_event::<MineClickedEvent>();
         app.add_event::<AllCellsOpenedEvent>();
         app.add_startup_system(generate_board);
-        app.add_system(clear_open_cells.after("left_click"));
-        app.add_system(chord_solved_cell.after("left_click"));
-        app.add_system(game_over.after("left_click"));
-        app.add_system(flag_solved_cell.after("right_click"));
     }
 }
