@@ -3,6 +3,8 @@ use crate::board::{
     MineClickedEvent,
 };
 use crate::cell::{ApplyMaterialEvent, BasicCell, CELL_COLOR};
+use crate::AppState;
+
 use bevy::prelude::*;
 
 pub fn left_click(
@@ -131,11 +133,14 @@ pub fn right_click(
     }
 }
 
-pub struct MousePlugin;
+pub struct InGameMousePlugin;
 
-impl Plugin for MousePlugin {
+impl Plugin for InGameMousePlugin {
     fn build(&self, app: &mut App) {
-        app.add_system(left_click.label("left_click"));
-        app.add_system(right_click.label("right_click"));
+        app.add_system_set(
+            SystemSet::on_update(AppState::InGame)
+                .with_system(left_click.label("left_click"))
+                .with_system(right_click.label("right_click")),
+        );
     }
 }

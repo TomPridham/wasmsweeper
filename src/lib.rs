@@ -10,6 +10,13 @@ use cell::CellPlugin;
 use mouse::MousePlugin;
 use wasm_bindgen::prelude::*;
 
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+enum AppState {
+    MainMenu,
+    InGame,
+    Paused,
+}
+
 #[cfg(not(target_arch = "wasm32"))]
 fn load_images() {}
 // preload all the images on wasm since they are http requests and can take some time
@@ -84,11 +91,13 @@ fn setup(mut commands: Commands) {
 pub fn run() {
     #[cfg(target_arch = "wasm32")]
     console_error_panic_hook::set_once();
+
     App::new()
         .add_plugins(DefaultPlugins)
-        .add_plugin(MousePlugin)
         .add_plugin(BoardPlugin)
+        .add_plugin(MousePlugin)
         .add_plugin(CellPlugin)
+        .add_state(AppState::InGame)
         .insert_resource(ClearColor(Color::rgb(0.9, 0.9, 0.9)))
         .add_startup_system(load_images)
         .add_startup_system(setup)

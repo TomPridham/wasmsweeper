@@ -1,2 +1,2 @@
 a minesweeper clone written with bevy that compiles to wasm.
-building requires `wasm-pack` and `wasm-opt`
+building requires `wasm-pack`
