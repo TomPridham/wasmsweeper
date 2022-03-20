@@ -265,7 +265,55 @@ pub fn flag_solved_cell(
     })
 }
 
+fn generate_walls(commands: &mut Commands) {
+    let wall_thickness = 10.0;
+    let bounds = Vec2::new(400.0, 400.0);
+
+    // left
+    commands.spawn_bundle(SpriteBundle {
+        transform: Transform::from_xyz(-bounds.x / 2.0, 0.0, 0.0),
+        sprite: Sprite {
+            color: Color::PINK,
+            custom_size: Some(Vec2::new(wall_thickness, bounds.y + wall_thickness)),
+            ..Default::default()
+        },
+        ..Default::default()
+    });
+    // right
+    commands.spawn_bundle(SpriteBundle {
+        transform: Transform::from_xyz(bounds.x / 2.0, 0.0, 0.0),
+        sprite: Sprite {
+            color: Color::PINK,
+            custom_size: Some(Vec2::new(wall_thickness, bounds.y + wall_thickness)),
+            ..Default::default()
+        },
+        ..Default::default()
+    });
+
+    // bottom
+    commands.spawn_bundle(SpriteBundle {
+        transform: Transform::from_xyz(0.0, -bounds.y / 2.0, 0.0),
+        sprite: Sprite {
+            color: Color::PINK,
+            custom_size: Some(Vec2::new(bounds.x + wall_thickness, wall_thickness)),
+            ..Default::default()
+        },
+        ..Default::default()
+    });
+    // top
+    commands.spawn_bundle(SpriteBundle {
+        transform: Transform::from_xyz(0.0, bounds.y / 2.0, 0.0),
+        sprite: Sprite {
+            color: Color::PINK,
+            custom_size: Some(Vec2::new(bounds.x + wall_thickness, wall_thickness)),
+            ..Default::default()
+        },
+        ..Default::default()
+    });
+}
+
 pub fn generate_board(mut commands: Commands) {
+    generate_walls(&mut commands);
     let height = 16usize;
     let width = 16usize;
     let spacing = 2.0;
@@ -329,6 +377,7 @@ pub struct BoardPlugin;
 
 impl Plugin for BoardPlugin {
     fn build(&self, app: &mut App) {
+        app.add_system_set(SystemSet::on_enter(AppState::InGame).with_system(generate_board));
         app.add_system_set(
             SystemSet::on_update(AppState::InGame)
                 .with_system(clear_open_cells.after("left_click"))
@@ -341,6 +390,5 @@ impl Plugin for BoardPlugin {
         app.add_event::<FlagSolvedCellEvent>();
         app.add_event::<MineClickedEvent>();
         app.add_event::<AllCellsOpenedEvent>();
-        app.add_startup_system(generate_board);
     }
 }

@@ -16,6 +16,8 @@ opt-level = 'z'
 
 # Dependencies for all targets go here.
 [dependencies]
+bevy-ui-build-macros = "0.2.1"
+bevy-ui-navigation = "0.13.1"
 bevy_ecs = "0.6.1"
 console_error_panic_hook = "0.1.7"
 getrandom = { version = "0.2", features = ["wasm-bindgen"] }

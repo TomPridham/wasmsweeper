@@ -3,9 +3,14 @@ mod components;
 mod log;
 mod mouse;
 
-use bevy::prelude::*;
 use components::ComponentsPlugin;
 use mouse::MousePlugin;
+
+use bevy::prelude::*;
+use bevy_ui_navigation::systems::{
+    default_gamepad_input, default_keyboard_input, default_mouse_input, InputMapping,
+};
+use bevy_ui_navigation::{FocusState, Focusable, NavEvent, NavigationPlugin};
 use wasm_bindgen::prelude::*;
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
@@ -21,6 +26,7 @@ fn load_images() {}
 #[cfg(target_arch = "wasm32")]
 #[allow(unused_must_use)]
 fn load_images(asset_server: Res<AssetServer>) {
+    asset_server.load_untyped("fonts/FiraSans-Bold.ttf");
     asset_server.load_untyped("one.png");
     asset_server.load_untyped("flag.png");
     asset_server.load_untyped("two.png");
@@ -34,55 +40,11 @@ fn load_images(asset_server: Res<AssetServer>) {
     asset_server.load_untyped("u_lose.png");
     asset_server.load_untyped("u_win.png");
 }
+
 fn setup(mut commands: Commands) {
     // cameras
     commands.spawn_bundle(OrthographicCameraBundle::new_2d());
     commands.spawn_bundle(UiCameraBundle::default());
-    // Add walls
-    let wall_thickness = 10.0;
-    let bounds = Vec2::new(400.0, 400.0);
-
-    // left
-    commands.spawn_bundle(SpriteBundle {
-        transform: Transform::from_xyz(-bounds.x / 2.0, 0.0, 0.0),
-        sprite: Sprite {
-            color: Color::PINK,
-            custom_size: Some(Vec2::new(wall_thickness, bounds.y + wall_thickness)),
-            ..Default::default()
-        },
-        ..Default::default()
-    });
-    // right
-    commands.spawn_bundle(SpriteBundle {
-        transform: Transform::from_xyz(bounds.x / 2.0, 0.0, 0.0),
-        sprite: Sprite {
-            color: Color::PINK,
-            custom_size: Some(Vec2::new(wall_thickness, bounds.y + wall_thickness)),
-            ..Default::default()
-        },
-        ..Default::default()
-    });
-
-    // bottom
-    commands.spawn_bundle(SpriteBundle {
-        transform: Transform::from_xyz(0.0, -bounds.y / 2.0, 0.0),
-        sprite: Sprite {
-            color: Color::PINK,
-            custom_size: Some(Vec2::new(bounds.x + wall_thickness, wall_thickness)),
-            ..Default::default()
-        },
-        ..Default::default()
-    });
-    // top
-    commands.spawn_bundle(SpriteBundle {
-        transform: Transform::from_xyz(0.0, bounds.y / 2.0, 0.0),
-        sprite: Sprite {
-            color: Color::PINK,
-            custom_size: Some(Vec2::new(bounds.x + wall_thickness, wall_thickness)),
-            ..Default::default()
-        },
-        ..Default::default()
-    });
 }
 
 #[wasm_bindgen]
@@ -92,10 +54,18 @@ pub fn run() {
 
     App::new()
         .add_plugins(DefaultPlugins)
+        .insert_resource(ClearColor(Color::rgb(0.9, 0.9, 0.9)))
+        // menu navigation
+        .add_plugin(NavigationPlugin)
+        .add_system(default_keyboard_input)
+        .add_system(default_gamepad_input)
+        .add_system(default_mouse_input)
+        .init_resource::<InputMapping>()
+        // components
         .add_plugin(MousePlugin)
         .add_plugin(ComponentsPlugin)
-        .add_state(AppState::InGame)
-        .insert_resource(ClearColor(Color::rgb(0.9, 0.9, 0.9)))
+        .add_state(AppState::MainMenu)
+        //setup
         .add_startup_system(load_images)
         .add_startup_system(setup)
         .run();
